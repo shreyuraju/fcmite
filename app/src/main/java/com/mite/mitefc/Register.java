@@ -51,6 +51,7 @@ public class Register extends AppCompatActivity {
                     NdefMessage message = new NdefMessage(new NdefRecord[]{record});
 
                     if (writeTag(tag, message)) {
+                        Boolean writeToDb = wirteToDB(messageToWrite);
                         Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
                         finish();
                     } else {
@@ -61,6 +62,10 @@ public class Register extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private Boolean wirteToDB(String messageToWrite) {
+        return null;
     }
 
     private boolean writeTag(Tag tag, NdefMessage message) {

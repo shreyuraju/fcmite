@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "389675299033",
+    "firebase_url": "https://mite-fc-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "mite-fc",
+    "storage_bucket": "mite-fc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:389675299033:android:2785f077b29f3d32d90ec8",
+        "android_client_info": {
+          "package_name": "com.mite.mitefc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "389675299033-ir5a8e0jhnm1srjqj9jhiv8qtvkelaa9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mite.mitefc",
+            "certificate_hash": "5ee7efadca73b590097074862523d4bc66490085"
+          }
+        },
+        {
+          "client_id": "389675299033-l5jachiov20jauuutv5kb8s2cj4eq4u4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDci7gFqI3ItDxx4HIdxjH5EJU-qDMzyS8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "389675299033-l5jachiov20jauuutv5kb8s2cj4eq4u4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
