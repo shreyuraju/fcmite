@@ -4,12 +4,20 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.TextView;
+
 
 public class Home extends AppCompatActivity {
+
+    private NfcAdapter nfcAdapter;
+    private TextView NFCText;
+    public static final String TAG = Home.class.getSimpleName();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
