@@ -33,6 +33,8 @@ public class Register extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
+        getSupportActionBar().setTitle("REGISTER");
+
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         registerText = findViewById(R.id.registerText);
 

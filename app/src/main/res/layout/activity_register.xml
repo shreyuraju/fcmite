@@ -7,7 +7,7 @@
     android:orientation="vertical"
     tools:context=".Register">
     <TextView
-        android:text="REGISTER FOR MITE FC"
+        android:text="After Entering USN\nTap ID card on back of your\nMobile"
         android:gravity="center"
         android:layout_marginTop="20dp"
         android:textSize="32sp"
