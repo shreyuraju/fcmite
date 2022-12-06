@@ -1,5 +1,7 @@
 package com.mite.mitefc;
 
+import static com.mite.mitefc.R.id.alertText;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -13,18 +15,21 @@ import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -37,12 +42,15 @@ public class Register extends AppCompatActivity {
 
     public static final String TAG = Register.class.getSimpleName();
     private EditText registerText;
+    TextView alertTxt;
     private NfcAdapter nfcAdapter;
     private boolean isWrite = true;
     private final String regex = "";
 
     DatabaseReference reference;
     Pattern pattern;
+    FirebaseFirestore db;
+    boolean flag = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +61,10 @@ public class Register extends AppCompatActivity {
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         registerText = findViewById(R.id.registerText);
-        reference = FirebaseDatabase.getInstance().getReference();
+        alertTxt = findViewById(R.id.alertText);
 
+        reference = FirebaseDatabase.getInstance().getReference();
+        db = FirebaseFirestore.getInstance();
         pattern = Pattern.compile(regex);
 
 
@@ -76,17 +86,26 @@ public class Register extends AppCompatActivity {
                         if (messageToWrite != null && (!TextUtils.equals(messageToWrite, "null")) && (!TextUtils.isEmpty(messageToWrite))) {
                             NdefRecord record = NdefRecord.createMime(messageToWrite, messageToWrite.getBytes());
                             NdefMessage message = new NdefMessage(new NdefRecord[]{record});
-                            if (writeData(messageToWrite)) {
+                            if (checkUser(messageToWrite)) {
                                 if (writeTag(tag, message)) {
-                                    Boolean writeToDb = wirteToDB(messageToWrite);
-                                    if(writeToDb)
+                                    if(writeData(messageToWrite)) {
                                         Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
-                                    finish();
+                                        finish();
+                                    } else {
+                                        Toast.makeText(this, "Error Recording to DB", Toast.LENGTH_SHORT).show();
+                                    }
                                 } else {
                                     Toast.makeText(getApplicationContext(), "Error Registering", Toast.LENGTH_SHORT).show();
                                 }
                             } else {
-                                Toast.makeText(getApplicationContext(), "Error Registering", Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(getApplicationContext(), "User rec already Exists\n Please ", Toast.LENGTH_SHORT).show();
+                                alertTxt.setText("Record Already Exists");
+                                new Handler().postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        alertTxt.setText("After Entering USN\nTap ID card on\nback of yourMobile");
+                                    }
+                                }, 3000);
                             }
                         } else {
                             registerText.setError("Please enter the text to write");
@@ -96,31 +115,63 @@ public class Register extends AppCompatActivity {
         }
     }
 
+    private boolean checkUser(String text) {
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .whereEqualTo("USN", text)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        Log.d("DATA :",queryDocumentSnapshots.getDocuments().toString());
+                        if(queryDocumentSnapshots.isEmpty()) {
+                            flag = true;
+                        }
+
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        
+                    }
+                });
+        return flag;
+    }
+
     private boolean writeData(String messageToWrite) {
-        DatabaseReference databaseReference = reference.child("users").child(messageToWrite).push();
+        
         Map map = new HashMap();
         map.put("USN", messageToWrite);
-        map.put("balance", 0);
 
-        databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
+        db.collection("users").document(messageToWrite).set(map).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
-            public void onComplete(@NonNull Task task) {
+            public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()) {
-                    Toast.makeText(Register.this, "Data is recorded in DB", Toast.LENGTH_SHORT).show();
+                    DatabaseReference databaseReference = reference.child("users").child(messageToWrite).push();
+                    Map map = new HashMap();
+                    map.put("USN", messageToWrite);
+                    map.put("balance",0);
+                    databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
+                        @Override
+                        public void onComplete(@NonNull Task task) {
+                            if(task.isSuccessful()) {
+                                Toast.makeText(Register.this, "Recorded to DB", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Log.d("ERROR :", task.getException().getMessage());
+                            }
+                        }
+                    });
+
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.d("ERROR :", e.getMessage());
+                Log.d("ERROR :",e.toString());
             }
         });
 
         return true;
-    }
-
-    private Boolean wirteToDB(String messageToWrite) {
-        return null;
     }
 
     private boolean writeTag(Tag tag, NdefMessage message) {
