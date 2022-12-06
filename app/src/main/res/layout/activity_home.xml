@@ -13,20 +13,45 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:gravity="center">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_gravity="end">
             <TextView
                 android:gravity="center"
-                android:layout_marginTop="50dp"
-                android:id="@+id/TAGdata"
-                android:text="Tap ID card on the\nback of mobile"
+                android:layout_marginTop="15dp"
+                android:id="@+id/amountData"
+                android:text="Meals:"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="32sp"/>
+                android:textSize="20sp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/balanceData"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:gravity="center"
+            android:textSize="24sp" />
+
+        <TextView
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:id="@+id/TAGdata"
+            android:text="Tap ID card on the\nback of mobile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="32sp"/>
 
             <EditText
                 android:id="@+id/payText"
                 android:hint="Rupees"
                 android:inputType="numberDecimal"
                 android:maxLength="3"
+                android:layout_marginTop="10dp"
                 android:layout_width="350dp"
                 android:layout_height="match_parent" />
 

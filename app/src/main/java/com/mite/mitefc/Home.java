@@ -27,14 +27,24 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import java.io.IOException;
+import java.util.Map;
 
 
 public class Home extends AppCompatActivity {
 
     private NfcAdapter nfcAdapter, adapter;
-    private TextView NFCText;
+    private TextView NFCText, balData;
     public static final String TAG = Home.class.getSimpleName();
+
+    FirebaseDatabase firebaseDatabase;
+    DatabaseReference reference;
 
 
     @Override
@@ -43,8 +53,13 @@ public class Home extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         checkForNFCHardware();
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        reference = FirebaseDatabase.getInstance().getReference().child("users");
+
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         NFCText = findViewById(R.id.TAGdata);
+       balData = findViewById(R.id.balanceData);
+
 
     }
 
@@ -92,6 +107,32 @@ public class Home extends AppCompatActivity {
         }
     }
 
+    //checking balance data from database
+    private void checkBalance(String text) {
+
+        reference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists()) {
+                    Toast.makeText(getApplicationContext(), "User Rec Found", Toast.LENGTH_SHORT).show();
+                    String USN = null, bal = null;
+                    for(DataSnapshot data : snapshot.getChildren()) {
+                        USN = data.child("USN").getValue().toString();
+                        bal = data.child("balance").getValue().toString();
+                    }
+                    //Toast.makeText(Home.this, ""+USN+" "+bal, Toast.LENGTH_SHORT).show();
+                    NFCText.setText(USN);
+                    balData.setText("Balance : "+bal);
+
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+
     private void readFromNFC(Tag tag, Intent intent) {
         try {
             Ndef ndef = Ndef.get(tag);
@@ -115,7 +156,8 @@ public class Home extends AppCompatActivity {
 
                         byte[] payload = record.getPayload();
                         String text = new String(payload);
-                        NFCText.setText(text);
+                       // NFCText.setText(text);
+                        checkBalance(text);
                         Log.e("tag", "vahid  -->  " + text);
                         ndef.close();
 
@@ -135,7 +177,8 @@ public class Home extends AppCompatActivity {
                         if (ndefMessage != null) {
                             String message = new String(ndefMessage.getRecords()[0].getPayload());
                             Log.d(TAG, "NFC found.. " + "readFromNFC: " + message);
-                            NFCText.setText(message);
+                         //   NFCText.setText(message);
+                            checkBalance(message);
                             ndef.close();
                         } else {
                             Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
@@ -152,6 +195,7 @@ public class Home extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
 
     private Tag patchTag(Tag oTag) {
         if (oTag == null)
@@ -232,6 +276,9 @@ public class Home extends AppCompatActivity {
             case R.id.register:
                 startActivity(new Intent(getBaseContext(), Register.class));
                 break;
+
+            case R.id.admin: startActivity(new Intent(getBaseContext(), admin.class)); break;
+
             case R.id.exit: System.exit(0); break;
         }
         return super.onOptionsItemSelected(item);
