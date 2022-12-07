@@ -56,7 +56,7 @@
                 android:layout_height="match_parent" />
 
             <Button
-                android:id="@+id/pay"
+                android:id="@+id/payBtn"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"

@@ -100,6 +100,7 @@ public class Register extends AppCompatActivity {
                             } else {
                                 //Toast.makeText(getApplicationContext(), "User rec already Exists\n Please ", Toast.LENGTH_SHORT).show();
                                 alertTxt.setText("Record Already Exists");
+                                Toast.makeText(getApplicationContext(), "Please Tap till it Register (3 times)\n if you are NEW USER", Toast.LENGTH_SHORT).show();
                                 new Handler().postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
@@ -138,19 +139,20 @@ public class Register extends AppCompatActivity {
         return flag;
     }
 
-    private boolean writeData(String messageToWrite) {
+    private boolean writeData(String usn) {
         
         Map map = new HashMap();
-        map.put("USN", messageToWrite);
+        map.put("USN", usn);
 
-        db.collection("users").document(messageToWrite).set(map).addOnCompleteListener(new OnCompleteListener<Void>() {
+        db.collection("users").document(usn).set(map).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()) {
-                    DatabaseReference databaseReference = reference.child("users").child(messageToWrite).push();
+                    int bal =0;
+                    DatabaseReference databaseReference = reference.child("users").child(usn);
                     Map map = new HashMap();
-                    map.put("USN", messageToWrite);
-                    map.put("balance",0);
+                    map.put("USN", usn);
+                    map.put("balance", bal);
                     databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
                         @Override
                         public void onComplete(@NonNull Task task) {

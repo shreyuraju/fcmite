@@ -17,6 +17,7 @@ import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.nfc.tech.NfcA;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -24,9 +25,14 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -34,6 +40,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -43,8 +51,14 @@ public class Home extends AppCompatActivity {
     private TextView NFCText, balData;
     public static final String TAG = Home.class.getSimpleName();
 
+    Button payBtn;
+    EditText payText;
+
     FirebaseDatabase firebaseDatabase;
-    DatabaseReference reference;
+    DatabaseReference reference, reference1;
+
+    String NFCUSN, balText;
+    int balInt = 0;
 
 
     @Override
@@ -53,14 +67,84 @@ public class Home extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         checkForNFCHardware();
+        context();
         firebaseDatabase = FirebaseDatabase.getInstance();
         reference = FirebaseDatabase.getInstance().getReference().child("users");
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         NFCText = findViewById(R.id.TAGdata);
-       balData = findViewById(R.id.balanceData);
+        balData = findViewById(R.id.balanceData);
+
+        payBtn = findViewById(R.id.payBtn);
+        payText = findViewById(R.id.payText);
 
 
+
+
+        payBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                balText = payText.getText().toString();
+                try {
+                    balInt = Integer.parseInt(payText.getText().toString());
+                } catch (NumberFormatException e){
+                    Log.d("ERROR PARSEING", e.getMessage());
+                }
+                if(balInt < 50) {
+                    payText.setError("Amount must be greatter than 50");
+                    return;
+                }
+                updateBalance(balInt, NFCUSN);
+            }
+        });
+
+
+    }
+
+    private void updateBalance(int balText, String nfcusn) {
+
+        Map map = new HashMap();
+        map.put("USN", nfcusn);
+        map.put("balance", balText);
+        try {
+            reference.child(nfcusn).setValue(map).addOnSuccessListener(new OnSuccessListener() {
+                @Override
+                public void onSuccess(Object o) {
+                    checkBalance(nfcusn);
+                    Toast.makeText(getApplicationContext(), "Balance has been updated", Toast.LENGTH_SHORT).show();
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Log.d("ERROR updating", e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            Log.d("ERROR updating", e.getMessage());
+            Toast.makeText(getApplicationContext(), "Failed To Update", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+
+
+    private void context() {
+        refresh(30000);
+    }
+
+    private void refresh(int i) {
+        final Handler handler = new Handler();
+        final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                NFCUSN=null;
+                balText=null;
+                balData.setText(null);
+                NFCText.setText("Tap ID card on the\nback of mobile");
+                context();
+            }
+        };
+        handler.postDelayed(runnable, i);
     }
 
     private void checkForNFCHardware() {
@@ -108,22 +192,22 @@ public class Home extends AppCompatActivity {
     }
 
     //checking balance data from database
-    private void checkBalance(String text) {
-
+    private void checkUser(String text) {
         reference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+
                 if(snapshot.exists()) {
                     Toast.makeText(getApplicationContext(), "User Rec Found", Toast.LENGTH_SHORT).show();
-                    String USN = null, bal = null;
-                    for(DataSnapshot data : snapshot.getChildren()) {
-                        USN = data.child("USN").getValue().toString();
-                        bal = data.child("balance").getValue().toString();
-                    }
-                    //Toast.makeText(Home.this, ""+USN+" "+bal, Toast.LENGTH_SHORT).show();
-                    NFCText.setText(USN);
-                    balData.setText("Balance : "+bal);
-
+                    Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
+                    Object balance = map.get("balance");
+                    String USN1 = (String) map.get("USN");
+                    NFCText.setText(USN1);
+                    balData.setText("Balance : "+balance);
+                } else {
+                    NFCText.setText("Tap ID card on the\nback of mobile");
+                    balData.setText(null);
+                    Toast.makeText(getApplicationContext(), "User Not Found\nPleas do Register", Toast.LENGTH_SHORT).show();
                 }
             }
             @Override
@@ -132,7 +216,36 @@ public class Home extends AppCompatActivity {
             }
         });
     }
+    
+    private void checkBalance(String nfcusn) {
+        
+        reference.child(nfcusn).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists()) {
+                    Toast.makeText(getApplicationContext(), "Balance Updated", Toast.LENGTH_SHORT).show();
+                    Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
+                    Object balance = map.get("balance");
+                    String USN = (String) map.get("USN");
+/*                  for(DataSnapshot data : snapshot.getChildren()) {
+                        Log.d("DATA :" , data.toString());
+                        USN = data.child("USN").getValue().toString();bal = data.child("balance").getValue().toString();
+                    }*/
+                    NFCText.setText(USN);
+                    balData.setText("Balance : "+balance);
+                } else {
+                    Toast.makeText(Home.this, "ERROR retriveing Balance", Toast.LENGTH_SHORT).show();
+                }
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+    }
+    
     private void readFromNFC(Tag tag, Intent intent) {
         try {
             Ndef ndef = Ndef.get(tag);
@@ -141,9 +254,6 @@ public class Home extends AppCompatActivity {
                 NdefMessage ndefMessage = ndef.getNdefMessage();
 
                 if (ndefMessage != null) {
-                    /*String message = new String(ndefMessage.getRecords()[0].getPayload());
-                    Log.d(TAG, "NFC found.. "+"readFromNFC: "+message );
-                    tvNFCMessage.setText(message);*/
 
                     Parcelable[] messages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
 
@@ -153,19 +263,16 @@ public class Home extends AppCompatActivity {
                             ndefMessages[i] = (NdefMessage) messages[i];
                         }
                         NdefRecord record = ndefMessages[0].getRecords()[0];
-
                         byte[] payload = record.getPayload();
                         String text = new String(payload);
                        // NFCText.setText(text);
-                        checkBalance(text);
+                        NFCUSN = text;
+                        checkUser(text);
                         Log.e("tag", "vahid  -->  " + text);
                         ndef.close();
-
                     }
-
                 } else {
                     Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
-
                 }
             } else {
                 NdefFormatable format = NdefFormatable.get(tag);
@@ -178,7 +285,8 @@ public class Home extends AppCompatActivity {
                             String message = new String(ndefMessage.getRecords()[0].getPayload());
                             Log.d(TAG, "NFC found.. " + "readFromNFC: " + message);
                          //   NFCText.setText(message);
-                            checkBalance(message);
+                            NFCUSN = message;
+                            checkUser(message);
                             ndef.close();
                         } else {
                             Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
@@ -274,10 +382,14 @@ public class Home extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case R.id.register:
-                startActivity(new Intent(getBaseContext(), Register.class));
+                Intent i = new Intent(getBaseContext(), Register.class);
+                startActivity(i);
                 break;
 
-            case R.id.admin: startActivity(new Intent(getBaseContext(), admin.class)); break;
+            case R.id.admin:
+                Intent i1 = new Intent(getBaseContext(), admin.class);
+                startActivity(i1);
+                break;
 
             case R.id.exit: System.exit(0); break;
         }
