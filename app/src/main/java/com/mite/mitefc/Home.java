@@ -57,7 +57,7 @@ public class Home extends AppCompatActivity {
     FirebaseDatabase firebaseDatabase;
     DatabaseReference reference, reference1;
 
-    String NFCUSN, balText;
+    String NFCUSN, balText, newBal;
     int balInt = 0;
 
 
@@ -103,9 +103,19 @@ public class Home extends AppCompatActivity {
 
     private void updateBalance(int balText, String nfcusn) {
 
+        int intNewBal = 0;
+        try {
+            balInt = Integer.parseInt(String.valueOf(balText));
+            intNewBal = Integer.parseInt(newBal);
+        } catch (NumberFormatException e){
+            Log.d("ERROR PARSEING", e.getMessage());
+        }
+
+        intNewBal = balInt + intNewBal;
+
         Map map = new HashMap();
         map.put("USN", nfcusn);
-        map.put("balance", balText);
+        map.put("balance", intNewBal);
         try {
             reference.child(nfcusn).setValue(map).addOnSuccessListener(new OnSuccessListener() {
                 @Override
@@ -204,6 +214,7 @@ public class Home extends AppCompatActivity {
                     String USN1 = (String) map.get("USN");
                     NFCText.setText(USN1);
                     balData.setText("Balance : "+balance);
+                    newBal = String.valueOf(balance);
                 } else {
                     NFCText.setText("Tap ID card on the\nback of mobile");
                     balData.setText(null);
