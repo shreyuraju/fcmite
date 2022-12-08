@@ -3,10 +3,13 @@ package com.mite.mitefc;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -38,6 +41,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mite.mitefc.Utility.NetworkChangeListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,6 +55,8 @@ public class Home extends AppCompatActivity {
     private TextView NFCText, balData;
     public static final String TAG = Home.class.getSimpleName();
 
+    NetworkChangeListener networkChangeListener = new NetworkChangeListener();
+
     Button payBtn;
     EditText payText;
 
@@ -59,14 +65,14 @@ public class Home extends AppCompatActivity {
 
     String NFCUSN, balText, newBal;
     int balInt = 0;
-
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        checkForNFCHardware();
+
         context();
         firebaseDatabase = FirebaseDatabase.getInstance();
         reference = FirebaseDatabase.getInstance().getReference().child("users");
@@ -78,8 +84,7 @@ public class Home extends AppCompatActivity {
         payBtn = findViewById(R.id.payBtn);
         payText = findViewById(R.id.payText);
 
-
-
+        progressDialog = new ProgressDialog(this);
 
         payBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,6 +105,8 @@ public class Home extends AppCompatActivity {
 
 
     }
+
+    //Updateing the Balance
 
     private void updateBalance(int balText, String nfcusn) {
 
@@ -137,37 +144,61 @@ public class Home extends AppCompatActivity {
     }
 
 
-
-    private void context() {
-        refresh(30000);
-    }
-
-    private void refresh(int i) {
-        final Handler handler = new Handler();
-        final Runnable runnable = new Runnable() {
+    //checking balance data from database
+    private void checkUser(String text) {
+        reference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void run() {
-                NFCUSN=null;
-                balText=null;
-                balData.setText(null);
-                NFCText.setText("Tap ID card on the\nback of mobile");
-                context();
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                if(snapshot.exists()) {
+                    Toast.makeText(getApplicationContext(), "User Rec Found", Toast.LENGTH_SHORT).show();
+                    Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
+                    Object balance = map.get("balance");
+                    String USN1 = (String) map.get("USN");
+                    NFCText.setText(USN1);
+                    balData.setText("Balance : "+balance);
+                    newBal = String.valueOf(balance);
+                } else {
+                    NFCText.setText("Tap ID card on the\nback of mobile");
+                    balData.setText(null);
+                    Toast.makeText(getApplicationContext(), "User Not Found\nPleas do Register", Toast.LENGTH_SHORT).show();
+                }
             }
-        };
-        handler.postDelayed(runnable, i);
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
     }
 
-    private void checkForNFCHardware() {
-        Context context=this;
-        NfcManager nfcManager = (NfcManager) context.getSystemService(Context.NFC_SERVICE);
-        adapter = nfcManager.getDefaultAdapter();
-        if (adapter != null && !adapter.isEnabled()) {
-            Toast.makeText(getApplicationContext(), "Need to Enable NFC", Toast.LENGTH_SHORT).show();
-        } else if (adapter != null && adapter.isEnabled()) {
-            Toast.makeText(getApplicationContext(), "NFC available", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(getApplicationContext(), "NFC Hardware not detected", Toast.LENGTH_SHORT).show();
-        }
+    //check balance
+
+    private void checkBalance(String nfcusn) {
+        
+        reference.child(nfcusn).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists()) {
+                    Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
+                    Object balance = map.get("balance");
+                    String USN = (String) map.get("USN");
+/*                  for(DataSnapshot data : snapshot.getChildren()) {
+                        Log.d("DATA :" , data.toString());
+                        USN = data.child("USN").getValue().toString();bal = data.child("balance").getValue().toString();
+                    }*/
+                    NFCText.setText(USN);
+                    balData.setText("Balance : "+balance);
+                } else {
+                    Toast.makeText(Home.this, "ERROR retriveing Balance", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
     }
 
     //on pause and on resume of NFC Activity
@@ -201,63 +232,13 @@ public class Home extends AppCompatActivity {
         }
     }
 
-    //checking balance data from database
-    private void checkUser(String text) {
-        reference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+    //reading from NFC card
 
-                if(snapshot.exists()) {
-                    Toast.makeText(getApplicationContext(), "User Rec Found", Toast.LENGTH_SHORT).show();
-                    Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
-                    Object balance = map.get("balance");
-                    String USN1 = (String) map.get("USN");
-                    NFCText.setText(USN1);
-                    balData.setText("Balance : "+balance);
-                    newBal = String.valueOf(balance);
-                } else {
-                    NFCText.setText("Tap ID card on the\nback of mobile");
-                    balData.setText(null);
-                    Toast.makeText(getApplicationContext(), "User Not Found\nPleas do Register", Toast.LENGTH_SHORT).show();
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-    }
-    
-    private void checkBalance(String nfcusn) {
-        
-        reference.child(nfcusn).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if(snapshot.exists()) {
-                    Toast.makeText(getApplicationContext(), "Balance Updated", Toast.LENGTH_SHORT).show();
-                    Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
-                    Object balance = map.get("balance");
-                    String USN = (String) map.get("USN");
-/*                  for(DataSnapshot data : snapshot.getChildren()) {
-                        Log.d("DATA :" , data.toString());
-                        USN = data.child("USN").getValue().toString();bal = data.child("balance").getValue().toString();
-                    }*/
-                    NFCText.setText(USN);
-                    balData.setText("Balance : "+balance);
-                } else {
-                    Toast.makeText(Home.this, "ERROR retriveing Balance", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
-    }
-    
     private void readFromNFC(Tag tag, Intent intent) {
+        progressDialog.setTitle("Reading");
+        progressDialog.setMessage("Please Wait");
+        progressDialog.setCanceledOnTouchOutside(true);
+        progressDialog.show();
         try {
             Ndef ndef = Ndef.get(tag);
             if (ndef != null) {
@@ -280,6 +261,7 @@ public class Home extends AppCompatActivity {
                         NFCUSN = text;
                         checkUser(text);
                         Log.e("tag", "vahid  -->  " + text);
+                        progressDialog.dismiss();
                         ndef.close();
                     }
                 } else {
@@ -298,6 +280,7 @@ public class Home extends AppCompatActivity {
                          //   NFCText.setText(message);
                             NFCUSN = message;
                             checkUser(message);
+                            progressDialog.dismiss();
                             ndef.close();
                         } else {
                             Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
@@ -405,5 +388,67 @@ public class Home extends AppCompatActivity {
             case R.id.exit: System.exit(0); break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    //check NFC hardware wheather iit is available or NOT
+
+    private void checkForNFCHardware() {
+        AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+
+        Context context=this;
+        NfcManager nfcManager = (NfcManager) context.getSystemService(Context.NFC_SERVICE);
+        adapter = nfcManager.getDefaultAdapter();
+        if (adapter != null && !adapter.isEnabled()) {
+            alertDialog.setTitle("Need to Enable NFC");
+            alertDialog.setIcon(R.drawable.ic_baseline_nfc_36);
+            alertDialog.setMessage("Please Enable Nfc");
+            alertDialog.setCanceledOnTouchOutside(false);
+            alertDialog.show();
+            // Toast.makeText(getApplicationContext(), "Need to Enable NFC", Toast.LENGTH_SHORT).show();
+        } else if (adapter != null && adapter.isEnabled()) {
+            Toast.makeText(getApplicationContext(), "NFC available", Toast.LENGTH_SHORT).show();
+        } else {
+            alertDialog.setTitle("HARDWARE ERROR");
+            alertDialog.setIcon(R.drawable.ic_baseline_error_outline_54);
+            alertDialog.setMessage("NFC Hardware not detected\nYou can't USE the Application");
+            alertDialog.setCanceledOnTouchOutside(false);
+            alertDialog.show();
+            //Toast.makeText(getApplicationContext(), "", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    //For Refreshing the lauyout for evry 30s
+
+    private void context() {
+        refresh(30000);
+    }
+    private void refresh(int i) {
+        final Handler handler = new Handler();
+        final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                NFCUSN=null;
+                balText=null;
+                balData.setText(null);
+                NFCText.setText("Tap ID card on the\nback of mobile");
+                context();
+            }
+        };
+        handler.postDelayed(runnable, i);
+    }
+
+    //on start
+    @Override
+    protected void onStart() {
+        checkForNFCHardware();
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(networkChangeListener, filter);
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        unregisterReceiver(networkChangeListener);
+        super.onStop();
     }
 }
