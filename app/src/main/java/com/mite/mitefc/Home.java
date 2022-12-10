@@ -34,8 +34,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -52,7 +54,7 @@ import java.util.Map;
 public class Home extends AppCompatActivity {
 
     private NfcAdapter nfcAdapter, adapter;
-    private TextView NFCText, balData;
+    private TextView NFCText, balData, amtData;
     public static final String TAG = Home.class.getSimpleName();
 
     NetworkChangeListener networkChangeListener = new NetworkChangeListener();
@@ -61,10 +63,10 @@ public class Home extends AppCompatActivity {
     EditText payText;
 
     FirebaseDatabase firebaseDatabase;
-    DatabaseReference reference, reference1;
+    DatabaseReference reference, userReference, adminReference, transReference;
 
     String NFCUSN, balText, newBal;
-    int balInt = 0;
+    int balInt = 0, transInt=0;
     ProgressDialog progressDialog;
 
     @Override
@@ -75,11 +77,15 @@ public class Home extends AppCompatActivity {
 
         context();
         firebaseDatabase = FirebaseDatabase.getInstance();
-        reference = FirebaseDatabase.getInstance().getReference().child("users");
+        reference = FirebaseDatabase.getInstance().getReference();
+        userReference = FirebaseDatabase.getInstance().getReference().child("users");
+        adminReference = FirebaseDatabase.getInstance().getReference().child("admin");
+        transReference = FirebaseDatabase.getInstance().getReference();
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         NFCText = findViewById(R.id.TAGdata);
         balData = findViewById(R.id.balanceData);
+        amtData = findViewById(R.id.amountData);
 
         payBtn = findViewById(R.id.payBtn);
         payText = findViewById(R.id.payText);
@@ -92,6 +98,7 @@ public class Home extends AppCompatActivity {
                 balText = payText.getText().toString();
                 try {
                     balInt = Integer.parseInt(payText.getText().toString());
+                    transInt = balInt;
                 } catch (NumberFormatException e){
                     Log.d("ERROR PARSEING", e.getMessage());
                 }
@@ -116,7 +123,7 @@ public class Home extends AppCompatActivity {
             intNewBal = Integer.parseInt(newBal);
         } catch (NumberFormatException e){
             Log.d("ERROR PARSEING", e.getMessage());
-        }
+        };
 
         intNewBal = balInt + intNewBal;
 
@@ -124,14 +131,16 @@ public class Home extends AppCompatActivity {
         map.put("USN", nfcusn);
         map.put("balance", intNewBal);
         try {
-            reference.child(nfcusn).setValue(map).addOnSuccessListener(new OnSuccessListener() {
+            userReference.child(nfcusn).setValue(map).addOnSuccessListener(new OnSuccessListener() {
                 @Override
                 public void onSuccess(Object o) {
                     //checkBalance(nfcusn);
+                    addToTransaction(nfcusn, transInt);
                     NFCText.setText("Balance has been updated\nTap again to see\nupdated Balance");
                     balData.setText(null);
                     payText.setText(null);
-                    //Toast.makeText(getApplicationContext(), "Balance has been updated", Toast.LENGTH_SHORT).show();
+                    NFCUSN = null;
+                    balInt =0;
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -146,10 +155,27 @@ public class Home extends AppCompatActivity {
 
     }
 
+    private void addToTransaction(String nfcusn, int transInt) {
+        Map map = new HashMap();
+        map.put("USN", nfcusn);
+        map.put("amount", transInt);
+        DatabaseReference databaseReference = reference.child("transaction").child("credit").push();
+        databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
+            @Override
+            public void onComplete(@NonNull Task task) {
+                if (task.isSuccessful()) {
+                    Log.d("Successfully added", "USN : "+map.get("USN")+" amt :"+map.get("amount"));
+                } else {
+                    Log.d("ERROR", task.getException().getMessage());
+                }
+            }
+        });
+    }
+
 
     //checking balance data from database
     private void checkUser(String text) {
-        reference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
+        userReference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
@@ -178,7 +204,7 @@ public class Home extends AppCompatActivity {
 
     private void checkBalance(String nfcusn) {
         
-        reference.child(nfcusn).addListenerForSingleValueEvent(new ValueEventListener() {
+        userReference.child(nfcusn).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if(snapshot.exists()) {
@@ -199,6 +225,25 @@ public class Home extends AppCompatActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
 
+            }
+        });
+    }
+
+    //Display Meal Amount
+    private void checkMealAmt() {
+
+        adminReference.child("mealsAmt").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
+                    String mealsamt = String.valueOf(map.get("amount"));
+                    amtData.setText("Meals : "+mealsamt);
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d("ERROR", error.getMessage());
             }
         });
 
@@ -420,6 +465,8 @@ public class Home extends AppCompatActivity {
         }
     }
 
+
+
     //For Refreshing the lauyout for evry 30s
 
     private void context() {
@@ -445,6 +492,7 @@ public class Home extends AppCompatActivity {
     @Override
     protected void onStart() {
         checkForNFCHardware();
+        checkMealAmt();
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(networkChangeListener, filter);
         super.onStart();
