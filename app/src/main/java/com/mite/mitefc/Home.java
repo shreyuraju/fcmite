@@ -127,8 +127,11 @@ public class Home extends AppCompatActivity {
             reference.child(nfcusn).setValue(map).addOnSuccessListener(new OnSuccessListener() {
                 @Override
                 public void onSuccess(Object o) {
-                    checkBalance(nfcusn);
-                    Toast.makeText(getApplicationContext(), "Balance has been updated", Toast.LENGTH_SHORT).show();
+                    //checkBalance(nfcusn);
+                    NFCText.setText("Balance has been updated\nTap again to see\nupdated Balance");
+                    balData.setText(null);
+                    payText.setText(null);
+                    //Toast.makeText(getApplicationContext(), "Balance has been updated", Toast.LENGTH_SHORT).show();
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -420,7 +423,7 @@ public class Home extends AppCompatActivity {
     //For Refreshing the lauyout for evry 30s
 
     private void context() {
-        refresh(30000);
+        refresh(60000);
     }
     private void refresh(int i) {
         final Handler handler = new Handler();
@@ -431,6 +434,7 @@ public class Home extends AppCompatActivity {
                 balText=null;
                 balData.setText(null);
                 NFCText.setText("Tap ID card on the\nback of mobile");
+                payText.setText(null);
                 context();
             }
         };

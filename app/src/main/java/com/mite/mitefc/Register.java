@@ -45,7 +45,7 @@ public class Register extends AppCompatActivity {
     TextView alertTxt;
     private NfcAdapter nfcAdapter;
     private boolean isWrite = true;
-    private final String regex = "";
+    private final String regex = "[0-9][a-zA-Z][a-zA-Z][0-9][0-9][a-zA-Z][a-zA-Z][0-9][0-9][0-9]";
 
     DatabaseReference reference;
     Pattern pattern;
@@ -80,6 +80,7 @@ public class Register extends AppCompatActivity {
                 String messageToWrite = registerText.getText().toString().toUpperCase(Locale.ROOT);
                 Matcher matcher = pattern.matcher(messageToWrite);
                 //matcher.matches()
+                if (matcher.matches()) {
                     if (messageToWrite.length() < 10) {
                         registerText.setError("Enter Proper reg USN");
                     } else {
@@ -88,7 +89,7 @@ public class Register extends AppCompatActivity {
                             NdefMessage message = new NdefMessage(new NdefRecord[]{record});
                             if (checkUser(messageToWrite)) {
                                 if (writeTag(tag, message)) {
-                                    if(writeData(messageToWrite)) {
+                                    if (writeData(messageToWrite)) {
                                         Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
                                         finish();
                                     } else {
@@ -112,6 +113,9 @@ public class Register extends AppCompatActivity {
                             registerText.setError("Please enter the text to write");
                         }
                     }
+                } else {
+                    registerText.setError("Enter Proper reg USN\n4MTXXXXXXX");
+                }
             }
         }
     }
@@ -128,7 +132,6 @@ public class Register extends AppCompatActivity {
                         if(queryDocumentSnapshots.isEmpty()) {
                             flag = true;
                         }
-
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
