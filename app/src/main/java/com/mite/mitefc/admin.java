@@ -3,6 +3,7 @@ package com.mite.mitefc;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -67,7 +68,7 @@ public class admin extends AppCompatActivity {
                 public void onComplete(@NonNull Task task) {
                     if (task.isSuccessful()) {
                         Toast.makeText(admin.this, "Updated", Toast.LENGTH_SHORT).show();
-                        //startActivity(new Intent(admin.this, Home.class));
+                        startActivity(new Intent(admin.this, Home.class));
                     } else {
                         Log.d("ERROR", task.getException().getMessage());
                     }
