@@ -46,7 +46,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.mite.mitefc.Utility.NetworkChangeListener;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -156,9 +158,12 @@ public class Home extends AppCompatActivity {
     }
 
     private void addToTransaction(String nfcusn, int transInt) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z");
+        String currentDandT = sdf.format(new Date());
         Map map = new HashMap();
         map.put("USN", nfcusn);
         map.put("amount", transInt);
+        map.put("date",currentDandT);
         DatabaseReference databaseReference = reference.child("transaction").child("credit").push();
         databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
             @Override
@@ -171,7 +176,6 @@ public class Home extends AppCompatActivity {
             }
         });
     }
-
 
     //checking balance data from database
     private void checkUser(String text) {
