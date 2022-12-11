@@ -458,7 +458,7 @@ public class Home extends AppCompatActivity {
             alertDialog.show();
             // Toast.makeText(getApplicationContext(), "Need to Enable NFC", Toast.LENGTH_SHORT).show();
         } else if (adapter != null && adapter.isEnabled()) {
-            Toast.makeText(getApplicationContext(), "NFC available", Toast.LENGTH_SHORT).show();
+          //  Toast.makeText(getApplicationContext(), "NFC available", Toast.LENGTH_SHORT).show();
         } else {
             alertDialog.setTitle("HARDWARE ERROR");
             alertDialog.setIcon(R.drawable.ic_baseline_error_outline_54);
