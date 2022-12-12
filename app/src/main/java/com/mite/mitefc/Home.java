@@ -33,6 +33,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,6 +52,9 @@ import com.mite.mitefc.transaction.MyAdapter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,7 +76,7 @@ public class Home extends AppCompatActivity {
 
     String NFCUSN, balText, newBal;
     int balInt = 0, transInt=0;
-    ProgressDialog progressDialog;
+    ProgressDialog progressDialog, progressDialog1;
 
     RecyclerView recyclerView;
     MyAdapter myAdapter;
@@ -103,7 +107,10 @@ public class Home extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.transList);
         recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setReverseLayout(true);
+        linearLayoutManager.setStackFromEnd(true);
+        recyclerView.setLayoutManager(linearLayoutManager);
 
         list = new ArrayList<>();
         myAdapter = new MyAdapter(this,list);
@@ -163,6 +170,7 @@ public class Home extends AppCompatActivity {
                     payText.setText(null);
                     NFCUSN = null;
                     balInt = 0;
+                    recyclerView.setAdapter(null);
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -243,10 +251,17 @@ public class Home extends AppCompatActivity {
     }
 
     private void showTransaction(String usn1) {
+        recyclerView.setAdapter(myAdapter);
+        progressDialog1 = new ProgressDialog(this);
+        progressDialog.setTitle("Fetching Transaction");
+        progressDialog.setMessage("Please Wait");
+        progressDialog.setCanceledOnTouchOutside(true);
+        progressDialog.show();
         transReference.child(usn1).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
+                    list.clear();
                     for (DataSnapshot data : snapshot.getChildren()) {
                         Log.d("DATA", data.getValue().toString());
                         String USN, amount, date, mode, utr;
@@ -255,6 +270,15 @@ public class Home extends AppCompatActivity {
                         date = data.child("date").getValue().toString();
                         mode = data.child("mode").getValue().toString();
                         utr = data.child("utr").getValue().toString();
+                        USN = "USN :"+USN;
+                        if (mode.equals("credit")) {
+                            amount = "+"+amount+" rs";
+                        } else {
+                            amount = "-"+amount+" rs";
+                        }
+                        date = "Date :"+date.substring(0,10) +", "+ date.substring(14,19);
+                        utr = "utr no :"+utr;
+
                         Trans trans = new Trans();
                             trans.setUSN(USN);
                             trans.setAmount(amount);
@@ -262,10 +286,14 @@ public class Home extends AppCompatActivity {
                             trans.setMode(mode);
                             trans.setUtr(utr);
                             list.add(trans);
+                            progressDialog1.dismiss();
                     }
+                    //Log.d("LIST DATA:", list.toString());
+                    progressDialog1.dismiss();
                     myAdapter.notifyDataSetChanged();
                 } else {
-                    Toast.makeText(Home.this, "No Transaction Exist", Toast.LENGTH_SHORT).show();
+                    recyclerView.setAdapter(null);
+                  //  Toast.makeText(Home.this, "No Transaction Exist", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -289,7 +317,8 @@ public class Home extends AppCompatActivity {
                     String USN = (String) map.get("USN");
 /*                  for(DataSnapshot data : snapshot.getChildren()) {
                         Log.d("DATA :" , data.toString());
-                        USN = data.child("USN").getValue().toString();bal = data.child("balance").getValue().toString();
+                        USN = data.child("USN").getValue().toString();
+                        bal = data.child("balance").getValue().toString();
                     }*/
                     NFCText.setText(USN);
                     balData.setText("Balance : "+balance);
@@ -547,7 +576,7 @@ public class Home extends AppCompatActivity {
     //For Refreshing the lauyout for evry 30s
 
     private void context() {
-        refresh(60000);
+        refresh(45000);
     }
     private void refresh(int i) {
         final Handler handler = new Handler();

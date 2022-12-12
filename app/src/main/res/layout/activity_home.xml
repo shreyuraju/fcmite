@@ -45,14 +45,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="32sp"/>
-            <EditText
-                android:id="@+id/payText"
-                android:hint="Rupees"
-                android:inputType="numberDecimal"
-                android:maxLength="3"
-                android:layout_marginTop="10dp"
-                android:layout_width="350dp"
-                android:layout_height="match_parent" />
+
+        <EditText
+            android:id="@+id/payText"
+            android:layout_width="389dp"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
+            android:hint="Rupees"
+            android:inputType="numberDecimal"
+            android:maxLength="3" />
             <Button
                 android:id="@+id/payBtn"
                 android:layout_width="100dp"
@@ -61,10 +62,14 @@
                 android:text="Pay"/>
 
     </LinearLayout>
+
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="398dp"
         android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:gravity="center"
         android:orientation="vertical">
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/transList"
             android:layout_width="match_parent"
