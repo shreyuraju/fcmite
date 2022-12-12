@@ -187,6 +187,10 @@ public class Home extends AppCompatActivity {
 
     //checking balance data from database
     private void checkUser(String text) {
+        progressDialog.setTitle("Fetching");
+        progressDialog.setMessage("Please Wait");
+        progressDialog.setCanceledOnTouchOutside(true);
+        progressDialog.show();
         userReference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -199,10 +203,13 @@ public class Home extends AppCompatActivity {
                     NFCText.setText(USN1);
                     balData.setText("Balance : "+balance);
                     newBal = String.valueOf(balance);
+                    progressDialog.dismiss();
                 } else {
                     NFCText.setText("Tap ID card on the\nback of mobile");
                     balData.setText(null);
-                    Toast.makeText(getApplicationContext(), "User Not Found\nPleas do Register", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    Toast.makeText(getApplicationContext(), "User Not Found\nPlease do Register", Toast.LENGTH_SHORT).show();
+
                 }
             }
             @Override
