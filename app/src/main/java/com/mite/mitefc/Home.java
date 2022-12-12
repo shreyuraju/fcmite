@@ -2,6 +2,8 @@ package com.mite.mitefc;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.AlertDialog;
 import android.app.PendingIntent;
@@ -44,6 +46,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.mite.mitefc.Utility.NetworkChangeListener;
+import com.mite.mitefc.transaction.MyAdapter;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -71,6 +74,10 @@ public class Home extends AppCompatActivity {
     int balInt = 0, transInt=0;
     ProgressDialog progressDialog;
 
+    RecyclerView recyclerView;
+    MyAdapter myAdapter;
+    ArrayList<Trans> list;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,7 +89,7 @@ public class Home extends AppCompatActivity {
         reference = FirebaseDatabase.getInstance().getReference();
         userReference = FirebaseDatabase.getInstance().getReference().child("users");
         adminReference = FirebaseDatabase.getInstance().getReference().child("admin");
-        transReference = FirebaseDatabase.getInstance().getReference();
+        transReference = FirebaseDatabase.getInstance().getReference().child("transaction");
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         NFCText = findViewById(R.id.TAGdata);
@@ -93,6 +100,14 @@ public class Home extends AppCompatActivity {
         payText = findViewById(R.id.payText);
 
         progressDialog = new ProgressDialog(this);
+
+        recyclerView = findViewById(R.id.transList);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        list = new ArrayList<>();
+        myAdapter = new MyAdapter(this,list);
+        recyclerView.setAdapter(myAdapter);
 
         payBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -108,7 +123,12 @@ public class Home extends AppCompatActivity {
                     payText.setError("Amount must be greatter than 50");
                     return;
                 }
-                updateBalance(balInt, NFCUSN);
+                if (true) {
+                    updateBalance(balInt, NFCUSN);    
+                } else {
+                    Toast.makeText(Home.this, "Payment Failed", Toast.LENGTH_SHORT).show();
+                }
+                
             }
         });
 
@@ -172,7 +192,7 @@ public class Home extends AppCompatActivity {
         map.put("amount", transInt);
         map.put("utr", utr);
         map.put("date",currentDandT);
-        DatabaseReference databaseReference = reference.child("transaction").push();
+        DatabaseReference databaseReference = transReference.child(nfcusn).push();
         databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
             @Override
             public void onComplete(@NonNull Task task) {
@@ -187,6 +207,7 @@ public class Home extends AppCompatActivity {
 
     //checking balance data from database
     private void checkUser(String text) {
+
         progressDialog.setTitle("Fetching");
         progressDialog.setMessage("Please Wait");
         progressDialog.setCanceledOnTouchOutside(true);
@@ -203,8 +224,10 @@ public class Home extends AppCompatActivity {
                     NFCText.setText(USN1);
                     balData.setText("Balance : "+balance);
                     newBal = String.valueOf(balance);
+                    showTransaction(USN1);
                     progressDialog.dismiss();
                 } else {
+                    recyclerView.setAdapter(null);
                     NFCText.setText("Tap ID card on the\nback of mobile");
                     balData.setText(null);
                     progressDialog.dismiss();
@@ -214,7 +237,41 @@ public class Home extends AppCompatActivity {
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                Log.d("DataBase ERROR :", error.getMessage());
+            }
+        });
+    }
 
+    private void showTransaction(String usn1) {
+        transReference.child(usn1).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    for (DataSnapshot data : snapshot.getChildren()) {
+                        Log.d("DATA", data.getValue().toString());
+                        String USN, amount, date, mode, utr;
+                        USN = data.child("USN").getValue().toString();
+                        amount = data.child("amount").getValue().toString();
+                        date = data.child("date").getValue().toString();
+                        mode = data.child("mode").getValue().toString();
+                        utr = data.child("utr").getValue().toString();
+                        Trans trans = new Trans();
+                            trans.setUSN(USN);
+                            trans.setAmount(amount);
+                            trans.setDate(date);
+                            trans.setMode(mode);
+                            trans.setUtr(utr);
+                            list.add(trans);
+                    }
+                    myAdapter.notifyDataSetChanged();
+                } else {
+                    Toast.makeText(Home.this, "No Transaction Exist", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d("DataBase ERROR :", error.getMessage());
             }
         });
     }
@@ -347,6 +404,7 @@ public class Home extends AppCompatActivity {
                          //   NFCText.setText(message);
                             NFCUSN = message;
                             progressDialog.dismiss();
+                            recyclerView.setAdapter(null);
                             checkUser(message);
                             ndef.close();
                         } else {
@@ -501,6 +559,7 @@ public class Home extends AppCompatActivity {
                 balData.setText(null);
                 NFCText.setText("Tap ID card on the\nback of mobile");
                 payText.setText(null);
+                recyclerView.setAdapter(null);
                 context();
             }
         };
