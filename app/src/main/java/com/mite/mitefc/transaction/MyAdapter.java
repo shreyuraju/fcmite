@@ -49,7 +49,6 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
 
         TextView usn, date, utr, amount;
 
-
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
             usn = itemView.findViewById(R.id.itemUsn);
