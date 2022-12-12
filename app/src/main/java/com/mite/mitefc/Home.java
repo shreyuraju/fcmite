@@ -142,7 +142,7 @@ public class Home extends AppCompatActivity {
                     balData.setText(null);
                     payText.setText(null);
                     NFCUSN = null;
-                    balInt =0;
+                    balInt = 0;
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
