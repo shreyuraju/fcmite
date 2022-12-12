@@ -160,9 +160,15 @@ public class Home extends AppCompatActivity {
     private void addToTransaction(String nfcusn, int transInt) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z");
         String currentDandT = sdf.format(new Date());
+        String date= currentDandT.substring(15,22);
+        String utr = currentDandT.substring(0,10);
+        utr = utr.replaceAll("\\p{Punct}", "");
+        date = date.replaceAll("\\p{Punct}","");
+        utr = utr+date;
         Map map = new HashMap();
         map.put("USN", nfcusn);
         map.put("amount", transInt);
+        map.put("utr", utr);
         map.put("date",currentDandT);
         DatabaseReference databaseReference = reference.child("transaction").child("credit").push();
         databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
@@ -311,9 +317,9 @@ public class Home extends AppCompatActivity {
                         String text = new String(payload);
                        // NFCText.setText(text);
                         NFCUSN = text;
-                        checkUser(text);
                         Log.e("tag", "vahid  -->  " + text);
                         progressDialog.dismiss();
+                        checkUser(text);
                         ndef.close();
                     }
                 } else {
@@ -331,8 +337,8 @@ public class Home extends AppCompatActivity {
                             Log.d(TAG, "NFC found.. " + "readFromNFC: " + message);
                          //   NFCText.setText(message);
                             NFCUSN = message;
-                            checkUser(message);
                             progressDialog.dismiss();
+                            checkUser(message);
                             ndef.close();
                         } else {
                             Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
