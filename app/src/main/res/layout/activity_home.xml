@@ -45,7 +45,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="32sp"/>
-
             <EditText
                 android:id="@+id/payText"
                 android:hint="Rupees"
@@ -54,13 +53,22 @@
                 android:layout_marginTop="10dp"
                 android:layout_width="350dp"
                 android:layout_height="match_parent" />
-
             <Button
                 android:id="@+id/payBtn"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:text="Pay"/>
+
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <ListView
+            android:id="@+id/transList"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
     </LinearLayout>
 

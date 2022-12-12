@@ -167,11 +167,12 @@ public class Home extends AppCompatActivity {
         date = date.replaceAll("\\p{Punct}","");
         utr = utr+date;
         Map map = new HashMap();
+        map.put("mode","credit");
         map.put("USN", nfcusn);
         map.put("amount", transInt);
         map.put("utr", utr);
         map.put("date",currentDandT);
-        DatabaseReference databaseReference = reference.child("transaction").child("credit").push();
+        DatabaseReference databaseReference = reference.child("transaction").push();
         databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
             @Override
             public void onComplete(@NonNull Task task) {
