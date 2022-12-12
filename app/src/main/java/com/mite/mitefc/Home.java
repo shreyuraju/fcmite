@@ -157,6 +157,7 @@ public class Home extends AppCompatActivity {
 
     }
 
+    //Transaction details
     private void addToTransaction(String nfcusn, int transInt) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z");
         String currentDandT = sdf.format(new Date());
