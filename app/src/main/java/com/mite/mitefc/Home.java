@@ -82,8 +82,6 @@ public class Home extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
-        context();
         firebaseDatabase = FirebaseDatabase.getInstance();
         reference = FirebaseDatabase.getInstance().getReference();
         userReference = FirebaseDatabase.getInstance().getReference().child("users");
@@ -229,6 +227,7 @@ public class Home extends AppCompatActivity {
                     newBal = String.valueOf(balance);
                     showTransaction(USN1);
                     progressDialog.dismiss();
+                    context();
                 } else {
                     recyclerView.setAdapter(null);
                     NFCText.setText("Tap ID card on the\nback of mobile");
@@ -529,11 +528,6 @@ public class Home extends AppCompatActivity {
                 startActivity(i);
                 break;
 
-            case R.id.admin:
-                Intent i1 = new Intent(getBaseContext(), admin.class);
-                startActivity(i1);
-                break;
-
             case R.id.exit: System.exit(0); break;
         }
         return super.onOptionsItemSelected(item);
@@ -571,7 +565,7 @@ public class Home extends AppCompatActivity {
     //For Refreshing the lauyout for evry 30s
 
     private void context() {
-        refresh(45000);
+        refresh(60000);
     }
     private void refresh(int i) {
         final Handler handler = new Handler();
