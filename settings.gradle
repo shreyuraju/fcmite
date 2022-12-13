@@ -14,4 +14,3 @@ dependencyResolutionManagement {
 }
 rootProject.name = "MITE FC"
 include ':app'
-include ':admin'
