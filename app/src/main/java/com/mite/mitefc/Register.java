@@ -45,10 +45,11 @@ public class Register extends AppCompatActivity {
     TextView alertTxt;
     private NfcAdapter nfcAdapter;
     private boolean isWrite = true;
-    private final String regex = "[0-9][a-zA-Z][a-zA-Z][0-9][0-9][a-zA-Z][a-zA-Z][0-9][0-9][0-9]";
+    private final String sturegex = "[0-9][a-zA-Z][a-zA-Z][0-9][0-9][a-zA-Z][a-zA-Z][0-9][0-9][0-9]";
+    private final String empregex = "[0-9][a-zA-Z][a-zA-Z][0-9][0-9][a-zA-Z][a-zA-Z][0-9][0-9][0-9]";
 
     DatabaseReference reference;
-    Pattern pattern;
+    Pattern pattern, pattern1;
     FirebaseFirestore db;
     boolean flag = false;
 
@@ -65,7 +66,8 @@ public class Register extends AppCompatActivity {
 
         reference = FirebaseDatabase.getInstance().getReference();
         db = FirebaseFirestore.getInstance();
-        pattern = Pattern.compile(regex);
+        pattern = Pattern.compile(sturegex);
+        pattern1 = Pattern.compile(empregex);
 
 
     }
@@ -160,7 +162,8 @@ public class Register extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task task) {
                             if(task.isSuccessful()) {
-                                Toast.makeText(Register.this, "Recorded to DB", Toast.LENGTH_SHORT).show();
+                                Log.d("Recorded to DB", map.toString());
+                                //Toast.makeText(Register.this, "Recorded to DB", Toast.LENGTH_SHORT).show();
                             } else {
                                 Log.d("ERROR :", task.getException().getMessage());
                             }

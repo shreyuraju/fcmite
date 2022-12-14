@@ -120,8 +120,8 @@ public class Home extends AppCompatActivity {
                 } catch (NumberFormatException e){
                     Log.d("ERROR PARSEING", e.getMessage());
                 }
-                if(balInt < 50) {
-                    payText.setError("Amount must be greatter than 50");
+                if(balInt < 50 || balInt >200) {
+                    payText.setError("Amount must be greatter than 50\nand less than 200");
                     return;
                 }
                 if (true) {
