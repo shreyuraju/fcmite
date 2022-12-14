@@ -47,6 +47,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.mite.mitefc.Utility.NetworkChangeListener;
 import com.mite.mitefc.transaction.MyAdapter;
+import com.mite.mitefc.transaction.Transaction;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -187,6 +188,8 @@ public class Home extends AppCompatActivity {
         utr = utr.replaceAll("\\p{Punct}", "");
         date = date.replaceAll("\\p{Punct}","");
         utr = utr+date;
+        Transaction t = new Transaction();
+
         Map map = new HashMap();
         map.put("mode","credit");
         map.put("USN", nfcusn);
@@ -194,10 +197,12 @@ public class Home extends AppCompatActivity {
         map.put("utr", utr);
         map.put("date",currentDandT);
         DatabaseReference databaseReference = transReference.child(nfcusn).push();
+        String finalUtr = utr;
         databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
             @Override
             public void onComplete(@NonNull Task task) {
                 if (task.isSuccessful()) {
+                    t.addToMainTransaction(map);
                     Log.d("Successfully added", "USN : "+map.get("USN")+" amt :"+map.get("amount"));
                 } else {
                     Log.d("ERROR", task.getException().getMessage());
@@ -205,6 +210,8 @@ public class Home extends AppCompatActivity {
             }
         });
     }
+
+
 
     //checking balance data from database
     private void checkUser(String text) {
@@ -245,6 +252,7 @@ public class Home extends AppCompatActivity {
     }
 
     private void showTransaction(String usn1) {
+        list.clear();
         recyclerView.setAdapter(myAdapter);
         progressDialog1 = new ProgressDialog(this);
         progressDialog.setTitle("Fetching Transaction");
@@ -255,7 +263,7 @@ public class Home extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    list.clear();
+
                     for (DataSnapshot data : snapshot.getChildren()) {
                         Log.d("DATA", data.getValue().toString());
                         String USN, amount, date, mode, utr;

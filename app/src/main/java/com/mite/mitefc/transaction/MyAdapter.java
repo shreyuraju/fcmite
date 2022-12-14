@@ -34,7 +34,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         Trans trans = list.get(position);
-        holder.usn.setText(trans.getUSN());
+      //  holder.usn.setText(trans.getUSN());
         holder.date.setText(trans.getDate());
         holder.utr.setText(trans.getUtr());
         holder.amount.setText(trans.getAmount());
@@ -47,11 +47,11 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
 
     public static class MyViewHolder extends RecyclerView.ViewHolder {
 
-        TextView usn, date, utr, amount;
+        TextView  date, utr, amount;
 
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
-            usn = itemView.findViewById(R.id.itemUsn);
+           // usn = itemView.findViewById(R.id.itemUsn);
             date = itemView.findViewById(R.id.itemDate);
             utr = itemView.findViewById(R.id.itemUtr);
             amount = itemView.findViewById(R.id.itemAmount);
