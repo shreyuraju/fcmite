@@ -120,8 +120,8 @@ public class Home extends AppCompatActivity {
                 } catch (NumberFormatException e){
                     Log.d("ERROR PARSEING", e.getMessage());
                 }
-                if(balInt < 50 || balInt >200) {
-                    payText.setError("Amount must be greatter than 50\nand less than 200");
+                if(balInt < 10 || balInt >200) {
+                    payText.setError("Amount must be greatter\nthan or equal to 10 and\nless than or equal to 200");
                     return;
                 }
                 if (true) {
@@ -236,10 +236,10 @@ public class Home extends AppCompatActivity {
                     progressDialog.dismiss();
                     context();
                 } else {
+                    progressDialog.dismiss();
                     recyclerView.setAdapter(null);
                     NFCText.setText("Tap ID card on the\nback of mobile");
                     balData.setText(null);
-                    progressDialog.dismiss();
                     Toast.makeText(getApplicationContext(), "User Not Found\nPlease do Register", Toast.LENGTH_SHORT).show();
 
                 }
