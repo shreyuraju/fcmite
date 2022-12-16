@@ -187,9 +187,8 @@ public class Home extends AppCompatActivity {
         String utr = currentDandT.substring(0,10);
         utr = utr.replaceAll("\\p{Punct}", "");
         date = date.replaceAll("\\p{Punct}","");
-        utr = utr+date;
+        utr = nfcusn+utr+date;
         Transaction t = new Transaction();
-
         Map map = new HashMap();
         map.put("mode","credit");
         map.put("USN", nfcusn);
@@ -210,8 +209,6 @@ public class Home extends AppCompatActivity {
             }
         });
     }
-
-
 
     //checking balance data from database
     private void checkUser(String text) {
