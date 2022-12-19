@@ -51,7 +51,7 @@ public class Register extends AppCompatActivity {
     DatabaseReference reference;
     Pattern pattern, pattern1;
     FirebaseFirestore db;
-    boolean flag = false;
+    boolean flag = false, flag1 = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,33 +86,29 @@ public class Register extends AppCompatActivity {
                     if (messageToWrite.length() < 10) {
                         registerText.setError("Enter Proper reg USN");
                     } else {
-                        if (messageToWrite != null && (!TextUtils.equals(messageToWrite, "null")) && (!TextUtils.isEmpty(messageToWrite))) {
-                            NdefRecord record = NdefRecord.createMime(messageToWrite, messageToWrite.getBytes());
-                            NdefMessage message = new NdefMessage(new NdefRecord[]{record});
-                            if (checkUser(messageToWrite)) {
-                                if (writeTag(tag, message)) {
-                                    if (writeData(messageToWrite)) {
-                                        Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
-                                        finish();
-                                    } else {
-                                        Toast.makeText(this, "Error Recording to DB", Toast.LENGTH_SHORT).show();
-                                    }
+                        NdefRecord record = NdefRecord.createMime(messageToWrite, messageToWrite.getBytes());
+                        NdefMessage message = new NdefMessage(new NdefRecord[]{record});
+                        if (checkUser(messageToWrite)) {
+                            if (writeTag(tag, message)) {
+                                if (writeData(messageToWrite)) {
+                                    Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
+                                    finish();
                                 } else {
-                                    Toast.makeText(getApplicationContext(), "Error Registering", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(this, "Error Recording to DB", Toast.LENGTH_SHORT).show();
                                 }
                             } else {
-                                //Toast.makeText(getApplicationContext(), "User rec already Exists\n Please ", Toast.LENGTH_SHORT).show();
-                                alertTxt.setText("Record Already Exists");
-                                Toast.makeText(getApplicationContext(), "Please Tap till it Register (3 times)\n if you are NEW USER", Toast.LENGTH_SHORT).show();
-                                new Handler().postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        alertTxt.setText("After Entering USN\nTap ID card on\nback of yourMobile");
-                                    }
-                                }, 3000);
+                                Toast.makeText(getApplicationContext(), "Error Registering", Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            registerText.setError("Please enter the text to write");
+                            //Toast.makeText(getApplicationContext(), "User rec already Exists\n Please ", Toast.LENGTH_SHORT).show();
+                            alertTxt.setText("Record Already Exists");
+                            Toast.makeText(getApplicationContext(), "Please Tap till it Register (3 times)\n if you are NEW USER", Toast.LENGTH_SHORT).show();
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    alertTxt.setText("After Entering USN\nTap ID card on\nback of yourMobile");
+                                }
+                            }, 3000);
                         }
                     }
                 } else {
@@ -162,6 +158,7 @@ public class Register extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task task) {
                             if(task.isSuccessful()) {
+                                flag1 = true;
                                 Log.d("Recorded to DB", map.toString());
                                 //Toast.makeText(Register.this, "Recorded to DB", Toast.LENGTH_SHORT).show();
                             } else {
@@ -179,7 +176,7 @@ public class Register extends AppCompatActivity {
             }
         });
 
-        return true;
+        return flag1;
     }
 
     private boolean writeTag(Tag tag, NdefMessage message) {
