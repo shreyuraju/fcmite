@@ -14,7 +14,7 @@ import java.util.Map;
 public class Transaction {
 
     public void addToMainTransaction(Map map) {
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("alltransaction").push();
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("admin").child("alltransaction").push();
         databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
             @Override
             public void onComplete(@NonNull Task task) {

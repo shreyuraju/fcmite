@@ -50,7 +50,6 @@ import com.mite.mitefc.transaction.MyAdapter;
 import com.mite.mitefc.transaction.Transaction;
 
 import java.io.IOException;
-import java.security.spec.ECField;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
