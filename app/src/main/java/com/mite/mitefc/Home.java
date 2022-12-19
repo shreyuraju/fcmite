@@ -50,6 +50,7 @@ import com.mite.mitefc.transaction.MyAdapter;
 import com.mite.mitefc.transaction.Transaction;
 
 import java.io.IOException;
+import java.security.spec.ECField;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -379,9 +380,15 @@ public class Home extends AppCompatActivity {
         super.onNewIntent(intent);
         Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         patchTag(tag);
-        if (tag != null) {
-            readFromNFC(tag, intent);
+        try {
+            if (tag != null) {
+                readFromNFC(tag, intent);
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "NO Data Found Please Register", Toast.LENGTH_SHORT).show();
+            Log.d("ERROR : ", e.getMessage());
         }
+
     }
 
     //reading from NFC card
@@ -393,14 +400,14 @@ public class Home extends AppCompatActivity {
         progressDialog.show();
         try {
             Ndef ndef = Ndef.get(tag);
-            if (ndef != null) {
+            if (ndef == null) {
+                progressDialog.dismiss();
+                Toast.makeText(this, "NO Data Found Please Register", Toast.LENGTH_SHORT).show();
+            } else if (ndef != null) {
                 ndef.connect();
                 NdefMessage ndefMessage = ndef.getNdefMessage();
-
                 if (ndefMessage != null) {
-
                     Parcelable[] messages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
-
                     if (messages != null) {
                         NdefMessage[] ndefMessages = new NdefMessage[messages.length];
                         for (int i = 0; i < messages.length; i++) {
@@ -409,6 +416,7 @@ public class Home extends AppCompatActivity {
                         NdefRecord record = ndefMessages[0].getRecords()[0];
                         byte[] payload = record.getPayload();
                         String text = new String(payload);
+                        Log.d("DATA : ", text);
                        // NFCText.setText(text);
                         NFCUSN = text;
                         Log.e("tag", "vahid  -->  " + text);
@@ -425,19 +433,19 @@ public class Home extends AppCompatActivity {
                     try {
                         format.connect();
                         NdefMessage ndefMessage = ndef.getNdefMessage();
-
                         if (ndefMessage != null) {
                             String message = new String(ndefMessage.getRecords()[0].getPayload());
                             Log.d(TAG, "NFC found.. " + "readFromNFC: " + message);
                          //   NFCText.setText(message);
                             NFCUSN = message;
-                            progressDialog.dismiss();
+
                             recyclerView.setAdapter(null);
+                            Log.d("DATA : ", message);
+                            progressDialog.dismiss();
                             checkUser(message);
                             ndef.close();
                         } else {
                             Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
-
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -455,7 +463,6 @@ public class Home extends AppCompatActivity {
     private Tag patchTag(Tag oTag) {
         if (oTag == null)
             return null;
-
         String[] sTechList = oTag.getTechList();
 
         Parcel oParcel, nParcel;
