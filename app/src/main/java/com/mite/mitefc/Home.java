@@ -217,6 +217,7 @@ public class Home extends AppCompatActivity {
         progressDialog.setMessage("Please Wait");
         progressDialog.setCanceledOnTouchOutside(true);
         progressDialog.show();
+
         userReference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -374,6 +375,7 @@ public class Home extends AppCompatActivity {
     }
 
     //reading
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -573,7 +575,7 @@ public class Home extends AppCompatActivity {
 
 
 
-    //For Refreshing the lauyout for evry 30s
+    //For Refreshing the lauyout for evry 50s
 
     private void context() {
         refresh(60000);
