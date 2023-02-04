@@ -54,6 +54,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -77,7 +78,7 @@ public class Home extends AppCompatActivity {
 
     RecyclerView recyclerView;
     MyAdapter myAdapter;
-    ArrayList<Trans> list;
+    ArrayList<Trans> list, transactionList;
 
     boolean isPressed = false;
 
@@ -109,6 +110,8 @@ public class Home extends AppCompatActivity {
         recyclerView.setLayoutManager(linearLayoutManager);
 
         list = new ArrayList<>();
+        transactionList = new ArrayList<>();
+
         myAdapter = new MyAdapter(this,list);
         recyclerView.setAdapter(myAdapter);
 
@@ -232,7 +235,8 @@ public class Home extends AppCompatActivity {
                     NFCText.setText(USN1);
                     balData.setText("Balance : "+balance);
                     newBal = String.valueOf(balance);
-                    showTransaction(USN1);
+                    //showTransaction(USN1);
+                    showAllTransaction(USN1);
                     progressDialog.dismiss();
                     context();
                 } else {
@@ -244,6 +248,66 @@ public class Home extends AppCompatActivity {
 
                 }
             }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d("DataBase ERROR :", error.getMessage());
+            }
+        });
+    }
+
+    private void showAllTransaction(String usn1) {
+        list.clear();
+        recyclerView.setAdapter(myAdapter);
+        progressDialog1 = new ProgressDialog(this);
+        progressDialog.setTitle("Fetching Transaction");
+        progressDialog.setMessage("Please Wait");
+        progressDialog.setCanceledOnTouchOutside(true);
+        progressDialog.show();
+        adminReference.child("alltransaction").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                if (snapshot.exists()) {
+                    list.clear();
+
+                    for (DataSnapshot data : snapshot.getChildren()) {
+                        //Log.d("DATA", data.getValue().toString());
+                        String USN, amount, date, mode, utr;
+                        USN = data.child("USN").getValue().toString();
+                        amount = data.child("amount").getValue().toString();
+                        date = data.child("date").getValue().toString();
+                        mode = data.child("mode").getValue().toString();
+                        utr = data.child("utr").getValue().toString();
+                        if (USN.equals(usn1)) {
+                            USN = "USN :"+USN;
+                            if (mode.equals("credit")) {
+                                amount = "+"+amount+" rs";
+                            } else {
+                                amount = "-"+amount+" rs";
+                            }
+                            date = "Date :"+date.substring(0,10) +", "+ date.substring(14,19);
+                            utr = "utr no :"+utr;
+
+                            Trans trans = new Trans();
+                            trans.setUSN(USN);
+                            trans.setAmount(amount);
+                            trans.setDate(date);
+                            trans.setMode(mode);
+                            trans.setUtr(utr);
+                            list.add(trans);
+                        }
+
+                        progressDialog1.dismiss();
+                    }
+
+                    progressDialog1.dismiss();
+                    myAdapter.notifyDataSetChanged();
+                } else {
+                    recyclerView.setAdapter(null);
+                    //  Toast.makeText(Home.this, "No Transaction Exist", Toast.LENGTH_SHORT).show();
+                }
+            }
+
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Log.d("DataBase ERROR :", error.getMessage());
