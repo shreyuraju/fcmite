@@ -79,6 +79,8 @@ public class Home extends AppCompatActivity {
     MyAdapter myAdapter;
     ArrayList<Trans> list;
 
+    boolean isPressed = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -261,6 +263,7 @@ public class Home extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
+                    list.clear();
 
                     for (DataSnapshot data : snapshot.getChildren()) {
                         Log.d("DATA", data.getValue().toString());
@@ -541,7 +544,7 @@ public class Home extends AppCompatActivity {
                 startActivity(i);
                 break;
 
-            case R.id.exit: System.exit(0); break;
+            //case R.id.exit: System.exit(0); break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -611,5 +614,23 @@ public class Home extends AppCompatActivity {
     protected void onStop() {
         unregisterReceiver(networkChangeListener);
         super.onStop();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(isPressed) {
+            finishAffinity();
+            System.exit(0);
+        } else {
+            Toast.makeText(this, "Press again to Exit", Toast.LENGTH_SHORT).show();
+            isPressed = true;
+        }
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                isPressed = false;
+            }
+        };
+        new Handler().postDelayed(runnable,2000);
     }
 }
