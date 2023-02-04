@@ -299,7 +299,6 @@ public class Home extends AppCompatActivity {
 
                         progressDialog1.dismiss();
                     }
-
                     progressDialog1.dismiss();
                     myAdapter.notifyDataSetChanged();
                 } else {
