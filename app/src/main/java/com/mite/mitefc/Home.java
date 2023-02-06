@@ -47,14 +47,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.mite.mitefc.Utility.NetworkChangeListener;
 import com.mite.mitefc.transaction.MyAdapter;
-import com.mite.mitefc.transaction.Transaction;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -130,15 +128,17 @@ public class Home extends AppCompatActivity {
                     return;
                 }
                 if (true) {
-                    updateBalance(balInt, NFCUSN);    
+                    updateBalance(balInt, NFCUSN);
+                    balData.setText(null);
+                    payText.setText(null);
+                    NFCUSN = null;
+                    balInt = 0;
+                    recyclerView.setAdapter(null);
                 } else {
                     Toast.makeText(Home.this, "Payment Failed", Toast.LENGTH_SHORT).show();
                 }
-                
             }
         });
-
-
     }
 
     //Updateing the Balance
@@ -162,7 +162,6 @@ public class Home extends AppCompatActivity {
             userReference.child(nfcusn).setValue(map).addOnSuccessListener(new OnSuccessListener() {
                 @Override
                 public void onSuccess(Object o) {
-                    //checkBalance(nfcusn);
                     addToTransaction(nfcusn, transInt);
                     NFCText.setText("Balance has been updated\nTap again to see\nupdated Balance");
                     balData.setText(null);
@@ -193,20 +192,17 @@ public class Home extends AppCompatActivity {
         utr = utr.replaceAll("\\p{Punct}", "");
         date = date.replaceAll("\\p{Punct}","");
         utr = nfcusn+utr+date;
-        Transaction t = new Transaction();
         Map map = new HashMap();
         map.put("mode","credit");
         map.put("USN", nfcusn);
         map.put("amount", transInt);
         map.put("utr", utr);
         map.put("date",currentDandT);
-        DatabaseReference databaseReference = transReference.child(nfcusn).push();
-        String finalUtr = utr;
+        DatabaseReference databaseReference = adminReference.child("alltransaction").push();
         databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
             @Override
             public void onComplete(@NonNull Task task) {
                 if (task.isSuccessful()) {
-                    t.addToMainTransaction(map);
                     Log.d("Successfully added", "USN : "+map.get("USN")+" amt :"+map.get("amount"));
                 } else {
                     Log.d("ERROR", task.getException().getMessage());
@@ -235,7 +231,6 @@ public class Home extends AppCompatActivity {
                     NFCText.setText(USN1);
                     balData.setText("Balance : "+balance);
                     newBal = String.valueOf(balance);
-                    //showTransaction(USN1);
                     showAllTransaction(USN1);
                     progressDialog.dismiss();
                     context();
@@ -255,6 +250,7 @@ public class Home extends AppCompatActivity {
         });
     }
 
+//DISPLAYING TRANSACTION MADE BY USER
     private void showAllTransaction(String usn1) {
         list.clear();
         recyclerView.setAdapter(myAdapter);
@@ -299,6 +295,7 @@ public class Home extends AppCompatActivity {
 
                         progressDialog1.dismiss();
                     }
+                    checkBalance(usn1);
                     progressDialog1.dismiss();
                     myAdapter.notifyDataSetChanged();
                 } else {
@@ -314,66 +311,11 @@ public class Home extends AppCompatActivity {
         });
     }
 
-    private void showTransaction(String usn1) {
-        list.clear();
-        recyclerView.setAdapter(myAdapter);
-        progressDialog1 = new ProgressDialog(this);
-        progressDialog.setTitle("Fetching Transaction");
-        progressDialog.setMessage("Please Wait");
-        progressDialog.setCanceledOnTouchOutside(true);
-        progressDialog.show();
-        transReference.child(usn1).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    list.clear();
-
-                    for (DataSnapshot data : snapshot.getChildren()) {
-                        Log.d("DATA", data.getValue().toString());
-                        String USN, amount, date, mode, utr;
-                        USN = data.child("USN").getValue().toString();
-                        amount = data.child("amount").getValue().toString();
-                        date = data.child("date").getValue().toString();
-                        mode = data.child("mode").getValue().toString();
-                        utr = data.child("utr").getValue().toString();
-                        USN = "USN :"+USN;
-                        if (mode.equals("credit")) {
-                            amount = "+"+amount+" rs";
-                        } else {
-                            amount = "-"+amount+" rs";
-                        }
-                        date = "Date :"+date.substring(0,10) +", "+ date.substring(14,19);
-                        utr = "utr no :"+utr;
-
-                        Trans trans = new Trans();
-                            trans.setUSN(USN);
-                            trans.setAmount(amount);
-                            trans.setDate(date);
-                            trans.setMode(mode);
-                            trans.setUtr(utr);
-                            list.add(trans);
-                            progressDialog1.dismiss();
-                    }
-                    //Log.d("LIST DATA:", list.toString());
-                    progressDialog1.dismiss();
-                    myAdapter.notifyDataSetChanged();
-                } else {
-                    recyclerView.setAdapter(null);
-                  //  Toast.makeText(Home.this, "No Transaction Exist", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.d("DataBase ERROR :", error.getMessage());
-            }
-        });
-    }
 
     //check balance
 
     private void checkBalance(String nfcusn) {
-        
+
         userReference.child(nfcusn).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -386,7 +328,7 @@ public class Home extends AppCompatActivity {
                         USN = data.child("USN").getValue().toString();
                         bal = data.child("balance").getValue().toString();
                     }*/
-                    NFCText.setText(USN);
+                    //NFCText.setText(USN);
                     balData.setText("Balance : "+balance);
                 } else {
                     Toast.makeText(Home.this, "ERROR retriveing Balance", Toast.LENGTH_SHORT).show();
