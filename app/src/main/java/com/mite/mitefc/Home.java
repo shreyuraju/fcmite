@@ -82,6 +82,8 @@ public class Home extends AppCompatActivity {
 
     PendingIntent pendingIntent;
 
+    String NFCUID=null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -391,6 +393,10 @@ public class Home extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        if (intent.getAction().equals(NfcAdapter.ACTION_TAG_DISCOVERED)) {
+            NFCUID = ByteArrayToHexString(intent.getByteArrayExtra(NfcAdapter.EXTRA_ID));
+            Log.d("NFC TAG UID","NFC Tag UID :" + ByteArrayToHexString(intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)));
+        }
         Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         patchTag(tag);
         try {
@@ -402,6 +408,22 @@ public class Home extends AppCompatActivity {
             Log.d("ERROR : ", e.getMessage());
         }
 
+    }
+
+    private String ByteArrayToHexString(byte[] byteArrayExtra) {
+        int i, j, in;
+        String [] hex = {"0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"};
+        String out= "";
+
+        for(j = 0 ; j < byteArrayExtra.length ; ++j)
+        {
+            in = (int) byteArrayExtra[j] & 0xff;
+            i = (in >> 4) & 0x0f;
+            out += hex[i];
+            i = in & 0x0f;
+            out += hex[i];
+        }
+        return out;
     }
 
     //reading from NFC card

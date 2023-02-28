@@ -1,7 +1,5 @@
 package com.mite.mitefc;
 
-import static com.mite.mitefc.R.id.alertText;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,7 +14,6 @@ import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.TextUtils;
 import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -79,7 +76,14 @@ public class Register extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+
+        String NFCUID=null;
+        if (intent.getAction().equals(NfcAdapter.ACTION_TAG_DISCOVERED)) {
+            NFCUID = ByteArrayToHexString(intent.getByteArrayExtra(NfcAdapter.EXTRA_ID));
+            Log.d("NFC TAG UID","NFC Tag UID :" + ByteArrayToHexString(intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)));
+        }
+
+            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
         if (tag != null) {
             if (isWrite) {
@@ -94,7 +98,7 @@ public class Register extends AppCompatActivity {
                         NdefMessage message = new NdefMessage(new NdefRecord[]{record});
                         if (checkUser(messageToWrite)) {
                             if (writeTag(tag, message)) {
-                                if (writeData(messageToWrite)) {
+                                if (writeData(messageToWrite, NFCUID)) {
                                     Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
                                     finish();
                                 } else {
@@ -122,6 +126,22 @@ public class Register extends AppCompatActivity {
         }
     }
 
+    private String ByteArrayToHexString(byte[] byteArrayExtra) {
+        int i, j, in;
+        String [] hex = {"0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"};
+        String out= "";
+
+        for(j = 0 ; j < byteArrayExtra.length ; ++j)
+        {
+            in = (int) byteArrayExtra[j] & 0xff;
+            i = (in >> 4) & 0x0f;
+            out += hex[i];
+            i = in & 0x0f;
+            out += hex[i];
+        }
+        return out;
+    }
+
     private boolean checkUser(String text) {
         FirebaseFirestore.getInstance()
                 .collection("users")
@@ -144,10 +164,11 @@ public class Register extends AppCompatActivity {
         return flag;
     }
 
-    private boolean writeData(String usn) {
+    private boolean writeData(String usn, String NFCUID) {
         
         Map map = new HashMap();
         map.put("USN", usn);
+        map.put("NFCUID", NFCUID);
 
         db.collection("users").document(usn).set(map).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
@@ -157,6 +178,7 @@ public class Register extends AppCompatActivity {
                     DatabaseReference databaseReference = reference.child("users").child(usn);
                     Map map = new HashMap();
                     map.put("USN", usn);
+                    map.put("NFCUID", NFCUID);
                     map.put("balance", bal);
                     databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
                         @Override
