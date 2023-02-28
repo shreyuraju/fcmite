@@ -170,12 +170,12 @@ public class Register extends AppCompatActivity {
         map.put("USN", usn);
         map.put("NFCUID", NFCUID);
 
-        db.collection("users").document(usn).set(map).addOnCompleteListener(new OnCompleteListener<Void>() {
+        db.collection("users").document(NFCUID).set(map).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()) {
                     int bal =0;
-                    DatabaseReference databaseReference = reference.child("users").child(usn);
+                    DatabaseReference databaseReference = reference.child("users").child(NFCUID);
                     Map map = new HashMap();
                     map.put("USN", usn);
                     map.put("NFCUID", NFCUID);

@@ -163,9 +163,10 @@ public class Home extends AppCompatActivity {
 
         Map map = new HashMap();
         map.put("USN", nfcusn);
+        map.put("NFCUID", NFCUID);
         map.put("balance", intNewBal);
         try {
-            userReference.child(nfcusn).setValue(map).addOnSuccessListener(new OnSuccessListener() {
+            userReference.child(NFCUID).setValue(map).addOnSuccessListener(new OnSuccessListener() {
                 @Override
                 public void onSuccess(Object o) {
                     addToTransaction(nfcusn, transInt);
@@ -218,14 +219,14 @@ public class Home extends AppCompatActivity {
     }
 
     //checking balance data from database
-    private void checkUser(String text) {
+    private void checkUser(String text, String NFCUID) {
 
         progressDialog.setTitle("Fetching");
         progressDialog.setMessage("Please Wait");
         progressDialog.setCanceledOnTouchOutside(true);
         progressDialog.show();
 
-        userReference.child(text).addListenerForSingleValueEvent(new ValueEventListener() {
+        userReference.child(NFCUID).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
@@ -301,7 +302,7 @@ public class Home extends AppCompatActivity {
 
                         progressDialog1.dismiss();
                     }
-                    checkBalance(usn1);
+                    checkBalance(NFCUID);
                     progressDialog1.dismiss();
                     myAdapter.notifyDataSetChanged();
                 } else {
@@ -456,7 +457,7 @@ public class Home extends AppCompatActivity {
                         NFCUSN = text;
                         Log.e("tag", "vahid  -->  " + text);
                         progressDialog.dismiss();
-                        checkUser(text);
+                        checkUser(text, NFCUID);
                         ndef.close();
                     }
 
@@ -494,7 +495,7 @@ public class Home extends AppCompatActivity {
                             recyclerView.setAdapter(null);
                             Log.d("DATA : ", message);
                             progressDialog.dismiss();
-                            checkUser(message);
+                            checkUser(message, NFCUID);
                             ndef.close();
                         } else {
                             Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
