@@ -80,6 +80,8 @@ public class Home extends AppCompatActivity {
 
     boolean isPressed = false;
 
+    PendingIntent pendingIntent;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -112,6 +114,8 @@ public class Home extends AppCompatActivity {
 
         myAdapter = new MyAdapter(this,list);
         recyclerView.setAdapter(myAdapter);
+
+        pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE);
 
         payBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -163,7 +167,7 @@ public class Home extends AppCompatActivity {
                 @Override
                 public void onSuccess(Object o) {
                     addToTransaction(nfcusn, transInt);
-                    NFCText.setText("Balance has been updated\nTap again to see\nupdated Balance");
+                    NFCText.setText("New Balance has been updated\nTap again to see\nUpdated Transaction");
                     balData.setText(null);
                     payText.setText(null);
                     NFCUSN = null;
@@ -377,7 +381,7 @@ public class Home extends AppCompatActivity {
         IntentFilter techDetected = new IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED);
         IntentFilter[] nfcIntentFilter = new IntentFilter[]{techDetected, tagDetected, ndefDetected};
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+
         if (nfcAdapter != null)
             nfcAdapter.enableForegroundDispatch(this, pendingIntent, nfcIntentFilter, null);
     }
@@ -433,10 +437,27 @@ public class Home extends AppCompatActivity {
                         checkUser(text);
                         ndef.close();
                     }
+
+//                    //this new lines of code
+//                    NdefRecord[] records = ndefMessage.getRecords();
+//                    String data = null;
+//                    for (NdefRecord record : records) {
+//                        byte[] payload = record.getPayload();
+//                        data = new String(payload);
+//                        // Do something with the data
+//                    }
+//                    NFCUSN = data;
+//                    Log.e("tag", "vahid  -->  " + data);
+//                    progressDialog.dismiss();
+//                    checkUser(data);
+//                    ndef.close();
+
+
                 } else {
                     Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
                 }
-            } else {
+            }
+            else {
                 NdefFormatable format = NdefFormatable.get(tag);
                 if (format != null) {
                     try {
@@ -460,7 +481,7 @@ public class Home extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 } else {
-                    Toast.makeText(this, "NFC is not readable", Toast.LENGTH_LONG).show();
+                   Toast.makeText(this, "NFC is not readable", Toast.LENGTH_LONG).show();
                 }
             }
         } catch (Exception e) {

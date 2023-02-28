@@ -53,6 +53,8 @@ public class Register extends AppCompatActivity {
     FirebaseFirestore db;
     boolean flag = false, flag1 = false;
 
+    PendingIntent pendingIntent;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +70,8 @@ public class Register extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         pattern = Pattern.compile(sturegex);
         pattern1 = Pattern.compile(empregex);
+
+        pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE);
 
 
     }
@@ -108,7 +112,7 @@ public class Register extends AppCompatActivity {
                                 public void run() {
                                     alertTxt.setText("After Entering USN\nTap ID card on\nback of yourMobile");
                                 }
-                            }, 3000);
+                            }, 1000);
                         }
                     }
                 } else {
@@ -179,6 +183,9 @@ public class Register extends AppCompatActivity {
         return flag1;
     }
 
+
+
+
     private boolean writeTag(Tag tag, NdefMessage message) {
         int size = message.toByteArray().length;
         try {
@@ -226,7 +233,7 @@ public class Register extends AppCompatActivity {
         IntentFilter techDetected = new IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED);
         IntentFilter[] nfcIntentFilter = new IntentFilter[]{techDetected, tagDetected, ndefDetected};
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+
         if (nfcAdapter != null)
             nfcAdapter.enableForegroundDispatch(this, pendingIntent, nfcIntentFilter, null);
     }
