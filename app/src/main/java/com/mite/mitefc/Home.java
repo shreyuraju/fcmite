@@ -45,6 +45,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.mite.mitefc.Utility.NetworkChangeListener;
 import com.mite.mitefc.transaction.MyAdapter;
 
@@ -67,10 +70,12 @@ public class Home extends AppCompatActivity {
     Button payBtn;
     EditText payText;
 
+    FirebaseFirestore firestoreDb;
+
     FirebaseDatabase firebaseDatabase;
     DatabaseReference reference, userReference, adminReference, transReference;
 
-    String NFCUSN, balText, newBal;
+    String NFCUSN, balText, newBal, prevBal;
     int balInt = 0, transInt=0;
     ProgressDialog progressDialog, progressDialog1;
 
@@ -88,6 +93,11 @@ public class Home extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+
+
+        firestoreDb = FirebaseFirestore.getInstance();
+
+
         firebaseDatabase = FirebaseDatabase.getInstance();
         reference = FirebaseDatabase.getInstance().getReference();
         userReference = FirebaseDatabase.getInstance().getReference().child("users");
@@ -124,13 +134,17 @@ public class Home extends AppCompatActivity {
             public void onClick(View view) {
                 balText = payText.getText().toString();
                 try {
-                    balInt = Integer.parseInt(payText.getText().toString());
-                    transInt = balInt;
+                    balInt = Integer.parseInt(balText);
+
                 } catch (NumberFormatException e){
                     Log.d("ERROR PARSEING", e.getMessage());
                 }
                 if(balInt < 10 || balInt >200) {
                     payText.setError("Amount must be greatter\nthan or equal to 10 and\nless than or equal to 200");
+                    return;
+                }
+                if ((balInt+transInt) > 200  ) {
+                    payText.setError("Wallet Limit is only 200rs");
                     return;
                 }
                 if (true) {
@@ -149,11 +163,11 @@ public class Home extends AppCompatActivity {
 
     //Updateing the Balance
 
-    private void updateBalance(int balText, String nfcusn) {
+    private void updateBalance(int balint, String nfcusn) {
 
         int intNewBal = 0;
         try {
-            balInt = Integer.parseInt(String.valueOf(balText));
+            balInt = Integer.parseInt(String.valueOf(balint));
             intNewBal = Integer.parseInt(newBal);
         } catch (NumberFormatException e){
             Log.d("ERROR PARSEING", e.getMessage());
@@ -162,14 +176,14 @@ public class Home extends AppCompatActivity {
         intNewBal = balInt + intNewBal;
 
         Map map = new HashMap();
-        map.put("USN", nfcusn);
-        map.put("NFCUID", NFCUID);
+        //map.put("USN", nfcusn);
+        //map.put("NFCUID", NFCUID);
         map.put("balance", intNewBal);
         try {
-            userReference.child(NFCUID).setValue(map).addOnSuccessListener(new OnSuccessListener() {
+            userReference.child(nfcusn).updateChildren(map).addOnSuccessListener(new OnSuccessListener() {
                 @Override
                 public void onSuccess(Object o) {
-                    addToTransaction(nfcusn, transInt);
+                    addToTransaction(nfcusn, balint);
                     NFCText.setText("New Balance has been updated\nTap again to see\nUpdated Transaction");
                     balData.setText(null);
                     payText.setText(null);
@@ -219,14 +233,49 @@ public class Home extends AppCompatActivity {
     }
 
     //checking balance data from database
-    private void checkUser(String text, String NFCUID) {
+
+    private void checkUser(String text, String nfcuid) {
+        progressDialog.setTitle("Fetching");
+        progressDialog.setMessage("Please Wait");
+        progressDialog.setCanceledOnTouchOutside(true);
+        progressDialog.show();
+
+        DocumentReference document = firestoreDb.collection("users").document(nfcuid);
+
+        document.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+
+                if(documentSnapshot.exists()) {
+                    NFCUSN = documentSnapshot.getString("USN");
+                    progressDialog.dismiss();
+                    checkData(NFCUSN);
+
+                } else {
+                    progressDialog.dismiss();
+                    Toast.makeText(getBaseContext(),"data not found" , Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        progressDialog.dismiss();
+                        Toast.makeText(getBaseContext(),"user not found" , Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+    }
+
+    private void checkData(String nfcusn) {
 
         progressDialog.setTitle("Fetching");
         progressDialog.setMessage("Please Wait");
         progressDialog.setCanceledOnTouchOutside(true);
         progressDialog.show();
 
-        userReference.child(NFCUID).addListenerForSingleValueEvent(new ValueEventListener() {
+        userReference.child(nfcusn).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
@@ -235,9 +284,17 @@ public class Home extends AppCompatActivity {
                     Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
                     Object balance = map.get("balance");
                     String USN1 = (String) map.get("USN");
+                    //NFCUSN=USN1;
                     NFCText.setText(USN1);
                     balData.setText("Balance : "+balance);
+
                     newBal = String.valueOf(balance);
+                    try {
+                        transInt = Integer.parseInt(newBal);
+                    } catch (Exception e) {
+                        Log.d("Error Parsing", e.getMessage());
+                    }
+
                     showAllTransaction(USN1);
                     progressDialog.dismiss();
                     context();
@@ -302,7 +359,7 @@ public class Home extends AppCompatActivity {
 
                         progressDialog1.dismiss();
                     }
-                    checkBalance(NFCUID);
+                    checkBalance(usn1);
                     progressDialog1.dismiss();
                     myAdapter.notifyDataSetChanged();
                 } else {
@@ -454,27 +511,12 @@ public class Home extends AppCompatActivity {
                         String text = new String(payload);
                         Log.d("DATA : ", text);
                        // NFCText.setText(text);
-                        NFCUSN = text;
+                        //NFCUSN = text;
                         Log.e("tag", "vahid  -->  " + text);
                         progressDialog.dismiss();
                         checkUser(text, NFCUID);
                         ndef.close();
                     }
-
-//                    //this new lines of code
-//                    NdefRecord[] records = ndefMessage.getRecords();
-//                    String data = null;
-//                    for (NdefRecord record : records) {
-//                        byte[] payload = record.getPayload();
-//                        data = new String(payload);
-//                        // Do something with the data
-//                    }
-//                    NFCUSN = data;
-//                    Log.e("tag", "vahid  -->  " + data);
-//                    progressDialog.dismiss();
-//                    checkUser(data);
-//                    ndef.close();
-
 
                 } else {
                     Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
@@ -511,6 +553,8 @@ public class Home extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
+
 
 
     private Tag patchTag(Tag oTag) {
@@ -637,6 +681,7 @@ public class Home extends AppCompatActivity {
         final Runnable runnable = new Runnable() {
             @Override
             public void run() {
+                NFCUID=null;
                 NFCUSN=null;
                 balText=null;
                 balData.setText(null);

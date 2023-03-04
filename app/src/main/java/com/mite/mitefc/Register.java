@@ -175,10 +175,10 @@ public class Register extends AppCompatActivity {
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()) {
                     int bal =0;
-                    DatabaseReference databaseReference = reference.child("users").child(NFCUID);
+                    DatabaseReference databaseReference = reference.child("users").child(usn);
                     Map map = new HashMap();
                     map.put("USN", usn);
-                    map.put("NFCUID", NFCUID);
+                    //map.put("NFCUID", NFCUID);
                     map.put("balance", bal);
                     databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
                         @Override
