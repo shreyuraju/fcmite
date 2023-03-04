@@ -234,7 +234,7 @@ public class Home extends AppCompatActivity {
 
     //checking balance data from database
 
-    private void checkUser(String text, String nfcuid) {
+    private void checkUser(String nfcuid) {
         progressDialog.setTitle("Fetching");
         progressDialog.setMessage("Please Wait");
         progressDialog.setCanceledOnTouchOutside(true);
@@ -247,6 +247,7 @@ public class Home extends AppCompatActivity {
             public void onSuccess(DocumentSnapshot documentSnapshot) {
 
                 if(documentSnapshot.exists()) {
+                    Toast.makeText(Home.this, "user registered", Toast.LENGTH_SHORT).show();
                     NFCUSN = documentSnapshot.getString("USN");
                     progressDialog.dismiss();
                     checkData(NFCUSN);
@@ -514,7 +515,7 @@ public class Home extends AppCompatActivity {
                         //NFCUSN = text;
                         Log.e("tag", "vahid  -->  " + text);
                         progressDialog.dismiss();
-                        checkUser(text, NFCUID);
+                        checkUser(NFCUID);
                         ndef.close();
                     }
 
@@ -537,7 +538,7 @@ public class Home extends AppCompatActivity {
                             recyclerView.setAdapter(null);
                             Log.d("DATA : ", message);
                             progressDialog.dismiss();
-                            checkUser(message, NFCUID);
+                            checkUser(NFCUID);
                             ndef.close();
                         } else {
                             Toast.makeText(this, "Not able to read from NFC, Please try again...", Toast.LENGTH_LONG).show();
