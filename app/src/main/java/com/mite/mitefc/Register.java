@@ -102,7 +102,7 @@ public class Register extends AppCompatActivity {
                                     Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
                                     finish();
                                 } else {
-                                    Toast.makeText(this, "Error Recording to DB", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(this, "Tap One More Time to Final Register", Toast.LENGTH_SHORT).show();
                                 }
                             } else {
                                 Toast.makeText(getApplicationContext(), "Error Registering", Toast.LENGTH_SHORT).show();
