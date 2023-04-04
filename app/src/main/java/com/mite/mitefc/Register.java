@@ -52,6 +52,8 @@ public class Register extends AppCompatActivity {
 
     PendingIntent pendingIntent;
 
+    String NFCUID=null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,13 +79,12 @@ public class Register extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
 
-        String NFCUID=null;
         if (intent.getAction().equals(NfcAdapter.ACTION_TAG_DISCOVERED)) {
             NFCUID = ByteArrayToHexString(intent.getByteArrayExtra(NfcAdapter.EXTRA_ID));
             Log.d("NFC TAG UID","NFC Tag UID :" + ByteArrayToHexString(intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)));
         }
 
-            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
         if (tag != null) {
             if (isWrite) {
@@ -96,21 +97,18 @@ public class Register extends AppCompatActivity {
                     } else {
                         NdefRecord record = NdefRecord.createMime(messageToWrite, messageToWrite.getBytes());
                         NdefMessage message = new NdefMessage(new NdefRecord[]{record});
-                        if (checkUser(messageToWrite)) {
-                            if (writeTag(tag, message)) {
-                                if (writeData(messageToWrite, NFCUID)) {
-                                    Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
-                                    finish();
-                                } else {
-                                    Toast.makeText(this, "Tap One More Time to Final Register", Toast.LENGTH_SHORT).show();
-                                }
+                        boolean flag = checkUser(messageToWrite);
+                        if (flag) {
+                            boolean flag1 = writeTag(tag, message);
+                            if (flag1) {
+                                writeData(messageToWrite, NFCUID);
                             } else {
                                 Toast.makeText(getApplicationContext(), "Error Registering", Toast.LENGTH_SHORT).show();
                             }
                         } else {
                             //Toast.makeText(getApplicationContext(), "User rec already Exists\n Please ", Toast.LENGTH_SHORT).show();
                             alertTxt.setText("Record Already Exists");
-                            Toast.makeText(getApplicationContext(), "Please Tap till it Register (3 times)\n if you are NEW USER", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Please Tap one more time\n if you are NEW USER", Toast.LENGTH_SHORT).show();
                             new Handler().postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -178,17 +176,18 @@ public class Register extends AppCompatActivity {
                     DatabaseReference databaseReference = reference.child("users").child(usn);
                     Map map = new HashMap();
                     map.put("USN", usn);
-                    //map.put("NFCUID", NFCUID);
                     map.put("balance", bal);
                     databaseReference.updateChildren(map).addOnCompleteListener(new OnCompleteListener() {
                         @Override
                         public void onComplete(@NonNull Task task) {
                             if(task.isSuccessful()) {
-                                flag1 = true;
+                                Toast.makeText(getApplicationContext(), "Successfully Registered", Toast.LENGTH_SHORT).show();
+                                finish();
                                 Log.d("Recorded to DB", map.toString());
                                 //Toast.makeText(Register.this, "Recorded to DB", Toast.LENGTH_SHORT).show();
                             } else {
                                 Log.d("ERROR :", task.getException().getMessage());
+                                Toast.makeText(getApplicationContext(), "Tap One More Time to Final Register", Toast.LENGTH_SHORT).show();
                             }
                         }
                     });

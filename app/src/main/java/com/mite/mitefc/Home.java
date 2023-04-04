@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -75,7 +77,7 @@ public class Home extends AppCompatActivity {
     FirebaseDatabase firebaseDatabase;
     DatabaseReference reference, userReference, adminReference, transReference;
 
-    String NFCUSN, balText, newBal, prevBal;
+    String NFCUSN, balText, newBal;
     int balInt = 0, transInt=0;
     ProgressDialog progressDialog, progressDialog1;
 
@@ -83,11 +85,13 @@ public class Home extends AppCompatActivity {
     MyAdapter myAdapter;
     ArrayList<Trans> list, transactionList;
 
-    boolean isPressed = false;
+    boolean isPressed = false, upiFlag=false;
 
     PendingIntent pendingIntent;
 
     String NFCUID=null;
+
+    final int UPI_PAYMENT = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,12 +136,21 @@ public class Home extends AppCompatActivity {
         payBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(NFCUSN == null) {
+                    payText.setError("USN is Null\nTap ID card on the\nback of mobile");
+                    return;
+                }
                 balText = payText.getText().toString();
+                Log.d("Paytext: ", balText);
                 try {
                     balInt = Integer.parseInt(balText);
 
                 } catch (NumberFormatException e){
                     Log.d("ERROR PARSEING", e.getMessage());
+                }
+                if ((balInt%2) != 0  ) {
+                    payText.setError("Amount should be in multiple of 10");
+                    return;
                 }
                 if(balInt < 10 || balInt >200) {
                     payText.setError("Amount must be greatter\nthan or equal to 10 and\nless than or equal to 200");
@@ -147,8 +160,22 @@ public class Home extends AppCompatActivity {
                     payText.setError("Wallet Limit is only 200rs");
                     return;
                 }
+//                else {
+//                    //paymentGateWay(NFCUSN, balText);
+//                }
+
                 if (true) {
-                    updateBalance(balInt, NFCUSN);
+
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                    String currentDandT = sdf.format(new Date());
+                    String date= currentDandT.substring(11,19);
+                    String utr = currentDandT.substring(0,10);
+                    utr = utr.replaceAll("\\p{Punct}", "");
+                    date = date.replaceAll("\\p{Punct}","");
+                    utr = NFCUSN+utr+date;
+
+                    updateBalance(balInt, NFCUSN, utr, currentDandT);
+
                     balData.setText(null);
                     payText.setText(null);
                     NFCUSN = null;
@@ -161,9 +188,130 @@ public class Home extends AppCompatActivity {
         });
     }
 
+    private boolean paymentGateWay(String nfcusn, String balText) {
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        String currentDandT = sdf.format(new Date());
+        String date= currentDandT.substring(15,19);
+        String utr = currentDandT.substring(0,10);
+        utr = utr.replaceAll("\\p{Punct}", "");
+        date = date.replaceAll("\\p{Punct}","");
+        utr = nfcusn+utr+date;
+
+
+        Uri uri = Uri.parse("upi://pay").buildUpon()
+                .appendQueryParameter("pa", "9206581025@ybl")
+                .appendQueryParameter("pn", "Shreyas M")
+                .appendQueryParameter("tn", utr)
+                .appendQueryParameter("am", balText)
+                .appendQueryParameter("cu", "INR")
+                .build();
+
+        Intent upiPayIntent = new Intent(Intent.ACTION_VIEW);
+        upiPayIntent.setData(uri);
+
+        Intent chooser = Intent.createChooser(upiPayIntent, "Pay With");
+
+        // check if intent resolves
+        if(null != chooser.resolveActivity(getPackageManager())) {
+            startActivityForResult(chooser, UPI_PAYMENT);
+        } else {
+            Toast.makeText(getBaseContext(),"No UPI app found, please install one to continue",Toast.LENGTH_SHORT).show();
+        }
+
+        if(upiFlag){
+            updateBalance(balInt, NFCUSN, utr, currentDandT);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case UPI_PAYMENT:
+                if ((RESULT_OK == resultCode) || (resultCode == 11)) {
+                    if (data != null) {
+                        String trxt = data.getStringExtra("response");
+                        Log.d("UPI", "onActivityResult: " + trxt);
+                        ArrayList<String> dataList = new ArrayList<>();
+                        dataList.add(trxt);
+                        upiPaymentDataOperation(dataList);
+                    } else {
+                        Log.d("UPI", "onActivityResult: " + "Return data is null");
+                        ArrayList<String> dataList = new ArrayList<>();
+                        dataList.add("nothing");
+                        upiPaymentDataOperation(dataList);
+                    }
+                } else {
+                    Log.d("UPI", "onActivityResult: " + "Return data is null"); //when user simply back without payment
+                    ArrayList<String> dataList = new ArrayList<>();
+                    dataList.add("nothing");
+                    upiPaymentDataOperation(dataList);
+                }
+                break;
+        }
+    }
+
+    private void upiPaymentDataOperation(ArrayList<String> data) {
+        if (isConnectionAvailable(getBaseContext())) {
+            String str = data.get(0);
+            Log.d("UPIPAY", "upiPaymentDataOperation: "+str);
+            String paymentCancel = "";
+            if(str == null) str = "discard";
+            String status = "";
+            String approvalRefNo = "";
+            String response[] = str.split("&");
+            for (int i = 0; i < response.length; i++) {
+                String equalStr[] = response[i].split("=");
+                if(equalStr.length >= 2) {
+                    if (equalStr[0].toLowerCase().equals("Status".toLowerCase())) {
+                        status = equalStr[1].toLowerCase();
+                    }
+                    else if (equalStr[0].toLowerCase().equals("ApprovalRefNo".toLowerCase()) || equalStr[0].toLowerCase().equals("txnRef".toLowerCase())) {
+                        approvalRefNo = equalStr[1];
+                    }
+                }
+                else {
+                    paymentCancel = "Payment cancelled by user.";
+                }
+            }
+
+            if (status.equals("success")) {
+                //Code to handle successful transaction here.
+                upiFlag=true;
+                Toast.makeText(getBaseContext(), "Transaction successful.", Toast.LENGTH_SHORT).show();
+                Log.d("UPI", "responseStr: "+approvalRefNo);
+            }
+            else if("Payment cancelled by user.".equals(paymentCancel)) {
+                Toast.makeText(getBaseContext(), "Payment cancelled by user.", Toast.LENGTH_SHORT).show();
+            }
+            else {
+                Toast.makeText(getBaseContext(), "Transaction failed.Please try again", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(getBaseContext(), "Internet connection is not available. Please check and try again", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public static boolean isConnectionAvailable(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager != null) {
+            NetworkInfo netInfo = connectivityManager.getActiveNetworkInfo();
+            if (netInfo != null && netInfo.isConnected()
+                    && netInfo.isConnectedOrConnecting()
+                    && netInfo.isAvailable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     //Updateing the Balance
 
-    private void updateBalance(int balint, String nfcusn) {
+    private void updateBalance(int balint, String nfcusn , String utr, String currentDandT) {
 
         int intNewBal = 0;
         try {
@@ -183,7 +331,7 @@ public class Home extends AppCompatActivity {
             userReference.child(nfcusn).updateChildren(map).addOnSuccessListener(new OnSuccessListener() {
                 @Override
                 public void onSuccess(Object o) {
-                    addToTransaction(nfcusn, balint);
+                    addToTransaction(nfcusn, balint, utr, currentDandT);
                     NFCText.setText("New Balance has been updated\nTap again to see\nUpdated Transaction");
                     balData.setText(null);
                     payText.setText(null);
@@ -205,14 +353,8 @@ public class Home extends AppCompatActivity {
     }
 
     //Transaction details
-    private void addToTransaction(String nfcusn, int transInt) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z");
-        String currentDandT = sdf.format(new Date());
-        String date= currentDandT.substring(15,22);
-        String utr = currentDandT.substring(0,10);
-        utr = utr.replaceAll("\\p{Punct}", "");
-        date = date.replaceAll("\\p{Punct}","");
-        utr = nfcusn+utr+date;
+    private void addToTransaction(String nfcusn, int transInt, String utr, String currentDandT) {
+
         Map map = new HashMap();
         map.put("mode","credit");
         map.put("USN", nfcusn);
@@ -346,7 +488,7 @@ public class Home extends AppCompatActivity {
                             } else {
                                 amount = "-"+amount+" rs";
                             }
-                            date = "Date :"+date.substring(0,10) +", "+ date.substring(14,19);
+                            date = "Date :"+date.substring(0,16);
                             utr = "utr no :"+utr;
 
                             Trans trans = new Trans();
