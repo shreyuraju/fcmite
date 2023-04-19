@@ -472,34 +472,34 @@ public class Home extends AppCompatActivity {
 
                 if (snapshot.exists()) {
                     list.clear();
-
                     for (DataSnapshot data : snapshot.getChildren()) {
                         //Log.d("DATA", data.getValue().toString());
-                        String USN, amount, date, mode, utr;
-                        USN = data.child("USN").getValue().toString();
-                        amount = data.child("amount").getValue().toString();
-                        date = data.child("date").getValue().toString();
-                        mode = data.child("mode").getValue().toString();
-                        utr = data.child("utr").getValue().toString();
-                        if (USN.equals(usn1)) {
-                            USN = "USN :"+USN;
-                            if (mode.equals("credit")) {
-                                amount = "+"+amount+" rs";
-                            } else {
-                                amount = "-"+amount+" rs";
+                        if (data.child("USN").getValue() != null) {
+                            String USN, amount, date, mode, utr;
+                            USN = data.child("USN").getValue().toString();
+                            amount = data.child("amount").getValue().toString();
+                            date = data.child("date").getValue().toString();
+                            mode = data.child("mode").getValue().toString();
+                            utr = data.child("utr").getValue().toString();
+                            if (USN.equals(usn1)) {
+                                USN = "USN :"+USN;
+                                if (mode.equals("credit")) {
+                                    amount = "+"+amount+" rs";
+                                } else {
+                                    amount = "-"+amount+" rs";
+                                }
+                                date = "Date :"+date.substring(0,16);
+                                utr = "utr no :"+utr;
+
+                                Trans trans = new Trans();
+                                trans.setUSN(USN);
+                                trans.setAmount(amount);
+                                trans.setDate(date);
+                                trans.setMode(mode);
+                                trans.setUtr(utr);
+                                list.add(trans);
                             }
-                            date = "Date :"+date.substring(0,16);
-                            utr = "utr no :"+utr;
-
-                            Trans trans = new Trans();
-                            trans.setUSN(USN);
-                            trans.setAmount(amount);
-                            trans.setDate(date);
-                            trans.setMode(mode);
-                            trans.setUtr(utr);
-                            list.add(trans);
                         }
-
                         progressDialog1.dismiss();
                     }
                     checkBalance(usn1);
