@@ -97,10 +97,14 @@ public class Register extends AppCompatActivity {
                     } else {
                         NdefRecord record = NdefRecord.createMime(messageToWrite, messageToWrite.getBytes());
                         NdefMessage message = new NdefMessage(new NdefRecord[]{record});
-                        boolean flag = checkUser(messageToWrite);
-                        if (flag) {
-                            boolean flag1 = writeTag(tag, message);
-                            if (flag1) {
+//                        boolean flag = checkUser(messageToWrite);
+                        checkUser(messageToWrite);
+//                        if (flag) {
+                        if (true) {
+//                            boolean flag1 = writeTag(tag, message);
+                            writeTag(tag, message);
+//                            if (flag1) {
+                            if (true) {
                                 writeData(messageToWrite, NFCUID);
                             } else {
                                 Toast.makeText(getApplicationContext(), "Error Registering", Toast.LENGTH_SHORT).show();
