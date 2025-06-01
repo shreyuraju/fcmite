@@ -102,10 +102,10 @@ public class Register extends AppCompatActivity {
 //                        if (flag) {
                         if (true) {
 //                            boolean flag1 = writeTag(tag, message);
-                            writeTag(tag, message);
+                            //writeTag(tag, message);
 //                            if (flag1) {
                             if (true) {
-                                writeData(messageToWrite, NFCUID);
+                                //writeData(messageToWrite, NFCUID);
                             } else {
                                 Toast.makeText(getApplicationContext(), "Error Registering", Toast.LENGTH_SHORT).show();
                             }
